@@ -1820,7 +1820,7 @@ class SnuddaInput(object):
                                  neuron_id,
                                  rng,
                                  synapse_density=None,
-                                 num_spike_trains=None,
+                                 num_spike_trains=0,
                                  cluster_size=None,
                                  cluster_spread=30e-6):
 
