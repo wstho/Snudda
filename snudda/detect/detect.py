@@ -2723,7 +2723,7 @@ class SnuddaDetect(object):
                         
                     except:
                         self.write_log(f"{hid}")
-                        self.write_log(f"{hyper_voxels[hid]["axon_density"]}")
+                        #self.write_log(f"{hyper_voxels[hid]["axon_density"]}")
 
                         #import pdb
                         #pdb.set_trace()
