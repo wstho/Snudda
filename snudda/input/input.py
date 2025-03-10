@@ -2281,7 +2281,7 @@ class SnuddaInput(object):
 
     ############################################################################
 
-    def import_csv_spikes(self, csv_file):
+    def import_csv_spikes_old(self, csv_file):
 
         spikes = []
         with open(csv_file, "r") as f:
@@ -2292,7 +2292,7 @@ class SnuddaInput(object):
         return spikes
 
 
-    def import_csv_spikes_optimized(self, csv_file):
+    def import_csv_spikes(self, csv_file):
         """
         Load and sort spike times from CSV file using optimized methods.
         Each row contains comma-separated spike times that need to be sorted.
