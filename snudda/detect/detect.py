@@ -2917,7 +2917,7 @@ class SnuddaDetect(object):
                 # self.write_log(f"neuron_id: {neuron_id}")
                         
                 density_hyper_voxel_id = self.get_density_location(neuron=neuron, seed=d_seed)
-                print(density_hyper_voxel_id)
+                # print(density_hyper_voxel_id)
 
 
                 for h_id in density_hyper_voxel_id:
@@ -3044,8 +3044,6 @@ class SnuddaDetect(object):
         for (min_c, max_c) in all_min_max:
             max_coord = np.maximum(max_coord, max_c)
             min_coord = np.minimum(min_coord, min_c)
-            
-            
         
         return min_coord, max_coord
 
