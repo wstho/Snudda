@@ -217,7 +217,8 @@ class SnuddaInput(object):
             self.make_neuron_input_parallel()
 
             # Write spikes to disk, HDF5 format
-            self.write_hdf5()
+            self.write_hdf5_parallel()
+            # self.write_hdf5()
 
             # Verify correlation --- THIS IS VERY VERY SLOW
             # self.verifyCorrelation()
@@ -247,182 +248,246 @@ class SnuddaInput(object):
         # self.nWorkers=nWorkers
 
     ############################################################################
+    def write_hdf5_parallel(self):
+        self.write_log(f"Writing spikes to {self.spike_data_filename}, in parallel", force_print=True)
+        
+        neuron_id_list = list(self.neuron_input.keys())
+        self.d_view.scatter("neuron_id_list", neuron_id_list, block=True)
+        self.d_view.push({'neuron_input': self.neuron_input})
+        
+        engine_temp_file_list = [f"{self.spike_data_filename}-{x}" for x in range(0, len(self.d_view))]
 
-    def write_hdf5(self):
+        self.d_view.scatter('engine_temp_file', engine_temp_file_list, block=True)
+
+        cmd_str = "nl.write_hdf5(neuron_id_list = neuron_id_list, neuron_input = neuron_input, engine_temp_file = engine_temp_file)"
+        self.d_view.execute(cmd_str, block=True)
+        self.write_log(f"spikes written to file", force_print=True)
+        
+        self.merge_spikes_virtual(self.spike_data_filename, engine_temp_file_list)
+        out_file = h5py.File(self.spike_data_filename, 'a', libver=self.h5libver)
+        out_file.create_dataset("config", data=json.dumps(self.input_info))
+        # input_group = out_file.create_group("input")
+        out_file.close()
+
+    def write_hdf5(self, neuron_id_list, neuron_input, engine_temp_file):
 
         """ Writes input spikes to HDF5 file. """
 
         self.write_log(f"Writing spikes to {self.spike_data_filename}", force_print=True)
 
-        out_file = h5py.File(self.spike_data_filename, 'w', libver=self.h5libver)
+        # out_file = h5py.File(self.spike_data_filename, 'w', libver=self.h5libver)
         # config_str = json.dumps(self.input_info)
         # out_file.create_dataset("config", data=config_str, dtype = h5py.string_dtype())
         # out_file.create_dataset("config", data=json.dumps(self.input_info))
-        input_group = out_file.create_group("input")
+        # input_group = out_file.create_group("input")
 
-        for neuron_id in self.neuron_input:
+        engine_temp_file = engine_temp_file[0]    
+        with h5py.File(engine_temp_file, 'w',libver=self.h5libver) as f:
+            input_group = f.create_group("input")
+            # input_group= f['input']
+            
+            for neuron_id in neuron_id_list:
 
-            nid_group = input_group.create_group(str(neuron_id))
-
-            neuron_type = self.neuron_type[neuron_id]
-
-            for input_type in self.neuron_input[neuron_id]:
-
-                if input_type[0] == '!':
-                    self.write_log(f"Disabling input {input_type} for neuron {neuron_id} "
-                                   f" (input_type was commented with ! before name)")
-                    continue
-                
-
-                if input_type.lower() != "virtual_neuron".lower():
-
-                    neuron_in = self.neuron_input[neuron_id][input_type]
-                    neuron_in["spike_source"] = [np.sum(s) for s in neuron_in['spikes']]
-
-                    spike_mat, num_spikes = self.create_spike_matrix(neuron_in["spikes"])
-
-                    if np.sum(num_spikes) == 0:
-                        # No spikes to save, do not write input to file
+                nid_group = input_group.create_group(str(neuron_id))
+    
+                neuron_type = self.neuron_type[neuron_id]
+    
+                for input_type in neuron_input[neuron_id]:
+    
+                    if input_type[0] == '!':
+                        self.write_log(f"Disabling input {input_type} for neuron {neuron_id} "
+                                       f" (input_type was commented with ! before name)")
                         continue
-
-                    it_group = nid_group.create_group(input_type)
-
                     
-                    spike_set = it_group.create_dataset("spikes", data=spike_mat, compression="lzf", dtype=np.float32)
-                    loc_set = it_group.create_dataset("location", data=neuron_in["location"][0], compression="lzf", dtype=np.float32)
-                    # loc_set = it_group.create_dataset("section_id", data=neuron_in["location"][1], compression="lzf", dtype=np.float32)
-                    # loc_set = it_group.create_dataset("section_x", data=neuron_in["location"][2], compression="lzf", dtype=np.float32)
-                    # loc_set = it_group.create_dataset("distance_to_soma", data=neuron_in["location"][3], compression="lzf", dtype=np.float32)
-
-                    #     pre_set = it_group.create_dataset("pre_id", data=neuron_in["spike_source"], compression="lzf", dtype=np.float32)
-
-                    spike_set.attrs["num_spikes"] = num_spikes
-
-                    it_group.attrs["section_id"] = neuron_in["location"][1].astype(np.int32)
-                    it_group.attrs["section_x"] = neuron_in["location"][2].astype(np.float32)
-                    it_group.attrs["distance_to_soma"] = neuron_in["location"][3].astype(np.float32)
-
-                    if "freq" in neuron_in:
-                        spike_set.attrs["freq"] = neuron_in["freq"]
-
-                    if "correlation" in neuron_in:
-                        spike_set.attrs["correlation"] = neuron_in["correlation"]
-
-                    if "jitter" in neuron_in and neuron_in["jitter"]:
-                        spike_set.attrs["jitter"] = neuron_in["jitter"]
-
-                    if "synapse_density" in neuron_in and neuron_in["synapse_density"]:
-                        it_group.attrs["synapse_density"] = neuron_in["synapse_density"]
-
-                    if "start" in neuron_in:
-                        spike_set.attrs["start"] = neuron_in["start"]
-
-                    if "end" in neuron_in:
-                        spike_set.attrs["end"] = neuron_in["end"]
-
-                    it_group.attrs["conductance"] = neuron_in["conductance"]
-
-                    if "population_unit_id" in neuron_in:
-                        population_unit_id = int(neuron_in["population_unit_id"])
-                        it_group.attrs["population_unit_id"] = population_unit_id
-                    else:
-                        population_unit_id = None
-
-                    # population_unit_id = 0 means not population unit membership, so no population spikes available
-                    if neuron_type in self.population_unit_spikes \
-                            and population_unit_id is not None and population_unit_id > 0 \
-                            and input_type in self.population_unit_spikes[neuron_type]:
-
-                        chan_spikes = self.population_unit_spikes[neuron_type][input_type][population_unit_id]
-
-                        it_group.create_dataset("population_unit_spikes", data=chan_spikes, compression="lzf",
-                                                dtype=np.float32)
-
-                    spike_set.attrs["generator"] = neuron_in["generator"]
-
-                    it_group.attrs["mod_file"] = neuron_in["mod_file"]
-
-                    if "parameter_file" in neuron_in and neuron_in["parameter_file"]:
-                        it_group.attrs["parameter_file"] = neuron_in["parameter_file"]
-
-                    # We need to convert this to string to be able to save it
-                    if "parameter_list" in neuron_in and neuron_in["parameter_list"] is not None:
-                        # We only need to save the synapse parameters in the file
-                        syn_par_list = [x["synapse"] for x in neuron_in["parameter_list"] if "synapse" in x]
-                        if len(syn_par_list) > 0:
-                            it_group.attrs["parameter_list"] = json.dumps(syn_par_list)
-
-                    it_group.attrs["parameter_id"] = neuron_in["parameter_id"].astype(np.int32)
-
-                else:
-
-                    # Input is activity of a virtual neuron
-                    a_group = nid_group.create_group("activity")
-
-                    try:
-                        if "spike_file" in self.neuron_input[neuron_id][input_type]:
-                            spike_file = self.neuron_input[neuron_id][input_type]["spike_file"]
-                    except:
-                        import traceback
-                        print(traceback.format_exc())
-                        import pdb
-                        pdb.set_trace()
-
-                    spike_row = self.neuron_input[neuron_id][input_type].get("row_id", None)
-
-                    if spike_row is None:
-
-                        if "row_mapping_file" in self.neuron_input[neuron_id][input_type]\
-                          and "row_mapping_data" not in self.neuron_input[neuron_id][input_type]:
-
-                            row_mapping_file = self.neuron_input[neuron_id][input_type]["row_mapping_file"]
-                            row_mapping_data = np.loadtxt(row_mapping_file, dtype=int)
-                            row_mapping = dict()
-                            for nid, rowid in row_mapping_data:
-                                if nid in row_mapping:
-                                    print(f"Warning neuron_id {nid} appears twice in {row_mapping_file}")
-                                row_mapping[nid] = rowid
-
-                            # Save row mapping so we dont have to generate it next iteration
-                            self.neuron_input[neuron_id][input_type]["row_mapping_data"] = row_mapping
-
-                        if "row_mapping_data" in self.neuron_input[neuron_id][input_type]\
-                            and neuron_id in self.neuron_input[neuron_id][input_type]["row_mapping_data"]:
-                            spike_row = self.neuron_input[neuron_id][input_type]["row_mapping_data"][neuron_id]
+    
+                    if input_type.lower() != "virtual_neuron".lower():
+    
+                        neuron_in = neuron_input[neuron_id][input_type]
+                        neuron_in["spike_source"] = [np.sum(s) for s in neuron_in['spikes']]
+    
+                        spike_mat, num_spikes = self.create_spike_matrix(neuron_in["spikes"])
+    
+                        if np.sum(num_spikes) == 0:
+                            # No spikes to save, do not write input to file
+                            continue
+    
+                        it_group = nid_group.create_group(input_type)
+    
+                        
+                        spike_set = it_group.create_dataset("spikes", data=spike_mat, compression="lzf", dtype=np.float32)
+                        loc_set = it_group.create_dataset("location", data=neuron_in["location"][0], compression="lzf", dtype=np.float32)
+                        # loc_set = it_group.create_dataset("section_id", data=neuron_in["location"][1], compression="lzf", dtype=np.float32)
+                        # loc_set = it_group.create_dataset("section_x", data=neuron_in["location"][2], compression="lzf", dtype=np.float32)
+                        # loc_set = it_group.create_dataset("distance_to_soma", data=neuron_in["location"][3], compression="lzf", dtype=np.float32)
+    
+                        #     pre_set = it_group.create_dataset("pre_id", data=neuron_in["spike_source"], compression="lzf", dtype=np.float32)
+    
+                        spike_set.attrs["num_spikes"] = num_spikes
+    
+                        it_group.attrs["section_id"] = neuron_in["location"][1].astype(np.int32)
+                        it_group.attrs["section_x"] = neuron_in["location"][2].astype(np.float32)
+                        it_group.attrs["distance_to_soma"] = neuron_in["location"][3].astype(np.float32)
+    
+                        if "freq" in neuron_in:
+                            spike_set.attrs["freq"] = neuron_in["freq"]
+    
+                        if "correlation" in neuron_in:
+                            spike_set.attrs["correlation"] = neuron_in["correlation"]
+    
+                        if "jitter" in neuron_in and neuron_in["jitter"]:
+                            spike_set.attrs["jitter"] = neuron_in["jitter"]
+    
+                        if "synapse_density" in neuron_in and neuron_in["synapse_density"]:
+                            it_group.attrs["synapse_density"] = neuron_in["synapse_density"]
+    
+                        if "start" in neuron_in:
+                            spike_set.attrs["start"] = neuron_in["start"]
+    
+                        if "end" in neuron_in:
+                            spike_set.attrs["end"] = neuron_in["end"]
+    
+                        it_group.attrs["conductance"] = neuron_in["conductance"]
+    
+                        if "population_unit_id" in neuron_in:
+                            population_unit_id = int(neuron_in["population_unit_id"])
+                            it_group.attrs["population_unit_id"] = population_unit_id
                         else:
-                            spike_row = neuron_id
+                            population_unit_id = None
+    
+                        # population_unit_id = 0 means not population unit membership, so no population spikes available
+                        # if neuron_type in self.population_unit_spikes \
+                        #         and population_unit_id is not None and population_unit_id > 0 \
+                        #         and input_type in self.population_unit_spikes[neuron_type]:
+    
+                        #     chan_spikes = self.population_unit_spikes[neuron_type][input_type][population_unit_id]
+    
+                        #     it_group.create_dataset("population_unit_spikes", data=chan_spikes, compression="lzf",
+                        #                             dtype=np.float32)
+    
+                        spike_set.attrs["generator"] = neuron_in["generator"]
+    
+                        it_group.attrs["mod_file"] = neuron_in["mod_file"]
+    
+                        if "parameter_file" in neuron_in and neuron_in["parameter_file"]:
+                            it_group.attrs["parameter_file"] = neuron_in["parameter_file"]
+    
+                        # We need to convert this to string to be able to save it
+                        if "parameter_list" in neuron_in and neuron_in["parameter_list"] is not None:
+                            # We only need to save the synapse parameters in the file
+                            syn_par_list = [x["synapse"] for x in neuron_in["parameter_list"] if "synapse" in x]
+                            if len(syn_par_list) > 0:
+                                it_group.attrs["parameter_list"] = json.dumps(syn_par_list)
+    
+                        it_group.attrs["parameter_id"] = neuron_in["parameter_id"].astype(np.int32)
+    
+                    else:
+    
+                        # Input is activity of a virtual neuron
+                        a_group = nid_group.create_group("activity")
+    
+                        try:
+                            if "spike_file" in neuron_input[neuron_id][input_type]:
+                                spike_file = neuron_input[neuron_id][input_type]["spike_file"]
+                        except:
+                            import traceback
+                            print(traceback.format_exc())
+                            import pdb
+                            pdb.set_trace()
+    
+                        spike_row = self.neuron_input[neuron_id][input_type].get("row_id", None)
+    
+                        if spike_row is None:
+    
+                            if "row_mapping_file" in neuron_input[neuron_id][input_type]\
+                              and "row_mapping_data" not in neuron_input[neuron_id][input_type]:
+    
+                                row_mapping_file = neuron_input[neuron_id][input_type]["row_mapping_file"]
+                                row_mapping_data = np.loadtxt(row_mapping_file, dtype=int)
+                                row_mapping = dict()
+                                for nid, rowid in row_mapping_data:
+                                    if nid in row_mapping:
+                                        print(f"Warning neuron_id {nid} appears twice in {row_mapping_file}")
+                                    row_mapping[nid] = rowid
+    
+                                # Save row mapping so we dont have to generate it next iteration
+                                self.neuron_input[neuron_id][input_type]["row_mapping_data"] = row_mapping
+    
+                            if "row_mapping_data" in neuron_input[neuron_id][input_type]\
+                                and neuron_id in neuron_input[neuron_id][input_type]["row_mapping_data"]:
+                                spike_row = neuron_input[neuron_id][input_type]["row_mapping_data"][neuron_id]
+                            else:
+                                spike_row = neuron_id
+    
+                        if "spike_data" not in neuron_input[neuron_id][input_type]:
+                            float_pattern = re.compile(r'^[-+]?[0-9]*\.?[0-9]+$')
+    
+                            s_data = []
+                            with open(spike_file, "rt") as f:
+                                for row in f:
+                                    s_data.append(np.array([float(x) for x in row.split(" ")
+                                                            if len(x) > 0 and float_pattern.match(x)]))
+    
+                            neuron_input[neuron_id][input_type]["spike_data"] = s_data
+    
+                        try:
+                            spikes = neuron_input[neuron_id][input_type]["spike_data"][spike_row]
+                        except:
+                            import traceback
+                            self.write_log(traceback.format_exc(), force_print=True)
+    
+                        # Save spikes, so check sorted can verify them.
+                        # TODO: Should we skip this, if there are MANY virtual neurons -- and we run out of memory?
+                        neuron_input[neuron_id][input_type]["spikes"] = spikes
+    
+                        if spikes is None and "spikes" in self.neuron_input[neuron_id][input_type]:
+                            spikes = neuron_input[neuron_id][input_type]["spikes"]
+    
+                        activity_spikes = a_group.create_dataset("spikes", data=spikes, compression="lzf")
+                        # generator = self.neuron_input[neuron_id][input_type]["generator"]
+                        # activity_spikes.attrs["generator"] = generator
+                        
+        
+    def merge_spikes_virtual(self, master_filename, worker_filenames):
+        """Create a master HDF5 file with virtual groups and datasets linking to worker files."""
 
-                    if "spike_data" not in self.neuron_input[neuron_id][input_type]:
-                        float_pattern = re.compile(r'^[-+]?[0-9]*\.?[0-9]+$')
+        with h5py.File(master_filename, 'w') as master_f:
 
-                        s_data = []
-                        with open(spike_file, "rt") as f:
-                            for row in f:
-                                s_data.append(np.array([float(x) for x in row.split(" ")
-                                                        if len(x) > 0 and float_pattern.match(x)]))
+            # Create the 'input' group in the master file
+            input_group = master_f.create_group("input")
 
-                        self.neuron_input[neuron_id][input_type]["spike_data"] = s_data
+            # Iterate through each worker file
+            for worker_file in worker_filenames:
+                with h5py.File(worker_file, 'r') as worker_f:
+                    # Iterate over all neuron_id groups in the worker file
+                    for neuron_id in worker_f['input']:
+                        neuron_group = worker_f['input'][neuron_id]
+                        # Iterate over all input_type groups inside the neuron_id group
+                        for input_type in neuron_group:
 
-                    try:
-                        spikes = self.neuron_input[neuron_id][input_type]["spike_data"][spike_row]
-                    except:
-                        import traceback
-                        print(traceback.format_exc())
-                        import pdb
-                        pdb.set_trace()
+                            spikes_dataset = neuron_group[input_type]['spikes']
+                            location_dataset = neuron_group[input_type]['location']
+    
+                            # Create virtual sources for 'spikes' and 'location' datasets in the worker file
+                            vsource_spikes = h5py.VirtualSource(worker_file, f'input/{neuron_id}/{input_type}/spikes', shape=spikes_dataset.shape)
+                            vsource_location = h5py.VirtualSource(worker_file, f'input/{neuron_id}/{input_type}/location', shape=location_dataset.shape)
+    
+                            # Define the virtual layout for both 'spikes' and 'location' datasets
+                            layout_spikes = h5py.VirtualLayout(shape=spikes_dataset.shape, dtype=spikes_dataset.dtype)
+                            layout_location = h5py.VirtualLayout(shape=location_dataset.shape, dtype=location_dataset.dtype)
+    
+                            # Link the virtual sources to the layouts
+                            layout_spikes[:] = vsource_spikes
+                            layout_location[:] = vsource_location
+    
+                            # Create a group for this neuron_id/input_type in the master file
+                            neuron_input_group = input_group.create_group(f'{neuron_id}/{input_type}')
+    
+                            # Create the virtual datasets for both 'spikes' and 'location'
+                            neuron_input_group.create_virtual_dataset('spikes', layout_spikes)
+                            neuron_input_group.create_virtual_dataset('location', layout_location)
 
-                    # Save spikes, so check sorted can verify them.
-                    # TODO: Should we skip this, if there are MANY virtual neurons -- and we run out of memory?
-                    self.neuron_input[neuron_id][input_type]["spikes"] = spikes
+            print(f"Created virtual dataset in {master_filename} with group structure.")
 
-                    if spikes is None and "spikes" in self.neuron_input[neuron_id][input_type]:
-                        spikes = self.neuron_input[neuron_id][input_type]["spikes"]
-
-                    activity_spikes = a_group.create_dataset("spikes", data=spikes, compression="lzf")
-                    # generator = self.neuron_input[neuron_id][input_type]["generator"]
-                    # activity_spikes.attrs["generator"] = generator
-
-        out_file.close()
 
     ############################################################################
 
