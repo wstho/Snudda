@@ -20,11 +20,6 @@ from snudda.utils.snudda_path import snudda_parse_path
 
 nl = None
 
-
-# When specifying vectors for start and end time, they should normally not overlap
-# if we want to allow that, set time_interval_overlap_warning = False
-
-
 class SnuddaInput(object):
     """ Generates input for the simulation. """
 
@@ -114,7 +109,7 @@ class SnuddaInput(object):
         self.time_interval_overlap_warning = time_interval_overlap_warning
         self.input_info = None
         self.population_unit_spikes = None
-        self.all_population_units = None  # List of all population units in simulation
+        self.all_population_units = None 
 
         self.num_population_units = None
         self.population_unit_id = None
@@ -148,17 +143,14 @@ class SnuddaInput(object):
             print("No network file specified, use load_network to load network info")
 
         if time:
-            self.time = time  # How long time to generate inputs for
+            self.time = time  
         else:
             self.time = 10
-
         self.write_log(f"Time = {time}")
 
         self.random_seed = random_seed
-
         self.h5libver = h5libver
         self.write_log(f"Using hdf5 version {h5libver}")
-
         self.neuron_cache = dict([])
 
     def load_network(self, hdf5_network_file=None):
@@ -169,13 +161,10 @@ class SnuddaInput(object):
         self.snudda_load = SnuddaLoad(hdf5_network_file)
         self.network_data = self.snudda_load.data
         self.neuron_info = self.network_data["neurons"]
-
         self.network_config_file = self.network_data["config_file"]
         self.position_file = self.network_data["position_file"]
-
         self.network_slurm_id = self.network_data["slurm_id"]
         self.population_unit_id = self.network_data["population_unit"]
-
         self.neuron_id = [n["neuron_id"] for n in self.network_data["neurons"]]
         self.neuron_name = [n["name"] for n in self.network_data["neurons"]]
         self.neuron_type = [n["type"] for n in self.network_data["neurons"]]
@@ -183,33 +172,18 @@ class SnuddaInput(object):
     def generate(self):
 
         """ Generates input for network. """
-
-        # Read in the input configuration information from JSON file
         self.read_input_config_file()
-
-        # Read the network config file -- This also reads random seed
         self.read_network_config_file()
 
         # Only the master node should start the work
         if self.role == 'master':
-            # Initialises lbView and dView (load balance, and direct view)
             self.setup_parallel()
-
-            # Make the "master input" for each channel
             rng = self.get_master_node_rng()
             self.make_population_unit_spike_trains(rng=rng)
-
-            # Generate the actual input spikes, and the locations
-            # stored in self.neuronInput dictionary
             self.make_neuron_input_parallel()
-
-            # Write spikes to disk, HDF5 format
-            # self.write_hdf5_parallel()
             self.write_hdf5_old()
-
             # Verify correlation --- THIS IS VERY VERY SLOW
             # self.verifyCorrelation()
-
             self.check_sorted()
 
     def write_hdf5_old(self):
