@@ -340,7 +340,7 @@ class SnuddaInput(object):
                                     row_mapping[nid] = rowid
 
                                 # Save row mapping so we dont have to generate it next iteration
-                                self.virtual_spike_file_cache[row_mapping_file] = row_mapping
+                                self.virtual_row_mapping_cache[row_mapping_file] = row_mapping
 
                             if neuron_id in row_mapping:
                                 spike_row = row_mapping[neuron_id]
