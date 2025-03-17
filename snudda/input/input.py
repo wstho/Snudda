@@ -172,6 +172,8 @@ class SnuddaInput(object):
     def generate(self):
 
         """ Generates input for network. """
+        self.write_log(f"Reading config file", force_print=True)
+
         self.read_input_config_file()
         self.read_network_config_file()
 
@@ -1786,7 +1788,7 @@ class SnuddaInput(object):
         self.d_view.execute(cmd_str, block=True)
 
         self.write_log("Read network config and input_info on workers")
-        cmd_str3 = "nl.generate()"
+        cmd_str3 = "nl.read_input_config_file()"
         self.d_view.execute(cmd_str3, block=True)
 
         self.write_log("Workers set up")
