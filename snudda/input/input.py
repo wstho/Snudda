@@ -1725,7 +1725,7 @@ class SnuddaInput(object):
         if self.rc is not None:
             # http://davidmasad.com/blog/simulation-with-ipyparallel/
             # http://people.duke.edu/~ccc14/sta-663-2016/19C_IPyParallel.html
-            self.write_log(f"Client IDs: {self.rc.ids}")
+            #self.write_log(f"Client IDs: {self.rc.ids}")
             self.d_view = self.rc.direct_view(targets='all')
 
             if self.logfile is not None:
@@ -1754,7 +1754,7 @@ class SnuddaInput(object):
                           "verbose": self.verbose,
                           "time_interval_overlap_warning": self.time_interval_overlap_warning})
 
-        self.write_log(f"Scattering engineLogFile = {engine_logfile}")
+        #self.write_log(f"Scattering engineLogFile = {engine_logfile}")
 
         self.d_view.scatter('log_filename', engine_logfile, block=True)
 
