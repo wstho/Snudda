@@ -609,8 +609,7 @@ class SnuddaInput(object):
                     'population_unit_id': engine_pop_units
 
                 })
-            
-            d_view.push({"nl.input_info": self.input_info}, block = True)
+
             cmd_str = "nl.setup_input_serial(neuron_id = neuron_id, neuron_name = neuron_name, neuron_type = neuron_type, population_unit_id = population_unit_id)"
             d_view.execute(cmd_str, block=True)
             
@@ -1786,8 +1785,8 @@ class SnuddaInput(object):
 
         self.d_view.execute(cmd_str, block=True)
 
-        self.write_log("Read network config on workers")
-        cmd_str3 = "nl.read_network_config_file()"
+        self.write_log("Read network config and input_info on workers")
+        cmd_str3 = "nl.generate()"
         self.d_view.execute(cmd_str3, block=True)
 
         self.write_log("Workers set up")
