@@ -2722,8 +2722,11 @@ class SnuddaDetect(object):
                         self.hyper_voxels[hid]["axon_density"].append(neuron_id)
                         
                     except:
-                        import pdb
-                        pdb.set_trace()
+                        self.write_log(f"{hid}")
+                        #self.write_log(f"{hyper_voxels[hid]["axon_density"]}")
+
+                        #import pdb
+                        #pdb.set_trace()
 
         # Sort for reproducibility
         self.count_and_sort_neurons_in_hypervoxels()
