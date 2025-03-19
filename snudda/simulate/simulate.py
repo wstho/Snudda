@@ -1180,21 +1180,36 @@ class SnuddaSimulate(object):
     def get_external_input_synapse(channel_module, section, section_x):
         """ Helper method to return channel_module(section(section_x)) """
         return channel_module(section(section_x))
+    
+    
+    def get_multiple_input_files(self):
+        
+        filename = self.input_file
+        directory = os.path.dirname(filename)
+        input_files = [os.path.join(directory, f) for f in os.listdir(directory) if "input-spikes.hdf5" in f]
+        
+        return input_files
 
     def add_external_input(self, input_file=None):
 
         """ Adds external input from input_file to network. """
 
-        if input_file is None:
-            if self.input_file is None:
-                print("No input file given, not adding external input!")
-                return
+        # if input_file is None:
+        #     if self.input_file is None:
+        #         print("No input file given, not adding external input!")
+        #         return
 
-            input_file = self.input_file
+        #     input_file = self.input_file
+            
+        self.write_log(f"Adding external input")
+        
+        self.input_data = {'input':{}, 'config':{}}
+        input_files = self.get_multiple_input_files()
 
-        self.write_log(f"Adding external (cortical, thalamic) input from {input_file}")
-
-        self.input_data = h5py.File(input_file, 'r')
+        for input_file in input_files:
+            input_data_temp = h5py.File(input_file, 'r')
+            for n_id in input_data_temp['input'].keys():  # Iterate over groups
+                self.input_data['input'][n_id] = input_data_temp['input'][n_id]
 
         for neuron_id, neuron in self.neurons.items():
 
