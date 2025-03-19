@@ -29,7 +29,7 @@ class SnuddaInput(object):
                  input_config_file=None,
                  spike_data_filename=None,
                  hdf5_network_file=None,
-                 time=10.0,
+                 time=5,
                  role = None,
                  h5libver="latest",
                  rc=None,
@@ -37,7 +37,7 @@ class SnuddaInput(object):
                  time_interval_overlap_warning=True,
                  logfile=None,
                  verbose=False,
-                 use_meta_input=True):
+                 use_meta_input=False):
 
         """
         Constructor.
@@ -208,11 +208,14 @@ class SnuddaInput(object):
             # Write spikes to disk, HDF5 format
             # self.write_hdf5_parallel()
             # self.write_hdf5_old()
-            self.write_hdf5_optimized()
+            # self.write_hdf5_optimized()
 
             # Verify correlation --- THIS IS VERY VERY SLOW
             # self.verifyCorrelation()
-            self.check_sorted()
+
+
+            # self.check_sorted()
+
 
         # 1. Define what the within correlation, and between correlation should be
         #    for each neuron type. Also what input frequency should we have for each
@@ -679,21 +682,27 @@ class SnuddaInput(object):
         out_file.close()
         
         
-        
-    def write_hdf5_optimized(self):
+    def write_hdf5_optimized(self, spike_data_filename = None, neuron_types = None):
         """ Writes input spikes to HDF5 file with optimized performance without increasing file size. """
         
         self.write_log(f"Writing spikes to {self.spike_data_filename}", force_print=True)
         
+        if spike_data_filename is None:
+            spike_data_filename = self.spike_data_filename
+            
+        if neuron_types is None:
+            neuron_types = self.neuron_type
+
+        
         # Use a context manager for file handling
-        with h5py.File(self.spike_data_filename, 'w', libver=self.h5libver) as out_file:
+        with h5py.File(spike_data_filename, 'w', libver=self.h5libver) as out_file:
             # Create dataset with minimal overhead
             out_file.create_dataset("config", data=json.dumps(self.input_info))
             input_group = out_file.create_group("input")
             
             # Process all neurons
             for neuron_id, inputs in self.neuron_input.items():
-                neuron_type = self.neuron_type[neuron_id]
+                neuron_type = neuron_types[neuron_id]
                 nid_group = input_group.create_group(str(neuron_id))
                 
                 # Process each input type for this neuron
@@ -767,21 +776,21 @@ class SnuddaInput(object):
             population_unit_id = int(neuron_in["population_unit_id"])
             it_group.attrs["population_unit_id"] = population_unit_id
         
-        # Handle population unit spikes with original compression settings
-        if (neuron_type in self.population_unit_spikes and 
-            population_unit_id is not None and 
-            population_unit_id > 0 and 
-            input_type in self.population_unit_spikes[neuron_type]):
+        # # Handle population unit spikes with original compression settings
+        # if (neuron_type in self.population_unit_spikes and 
+        #     population_unit_id is not None and 
+        #     population_unit_id > 0 and 
+        #     input_type in self.population_unit_spikes[neuron_type]):
             
-            chan_spikes = self.population_unit_spikes[neuron_type][input_type][population_unit_id]
+        #     chan_spikes = self.population_unit_spikes[neuron_type][input_type][population_unit_id]
             
-            # Use original compression settings
-            it_group.create_dataset(
-                "population_unit_spikes", 
-                data=chan_spikes, 
-                compression="lzf",  # Keep original compression
-                dtype=np.float32
-            )
+        #     # Use original compression settings
+        #     it_group.create_dataset(
+        #         "population_unit_spikes", 
+        #         data=chan_spikes, 
+        #         compression="lzf",  # Keep original compression
+        #         dtype=np.float32
+        #     )
         
         # Set remaining attributes
         spike_set.attrs["generator"] = neuron_in["generator"]
@@ -1092,10 +1101,12 @@ class SnuddaInput(object):
 
         if d_view is None:
             self.write_log("No d_view specified, running in serial", force_print=True)
-
             self.setup_input_serial(neuron_id = self.neuron_id, neuron_name = self.neuron_name, neuron_type = self.neuron_type, population_unit_id= self.population_unit_id)
 
         else:
+            
+            self.network_data_lookup = {n['neuron_id']: n for n in self.network_data['neurons']}
+
             sorted_name_indices = np.argsort(self.neuron_name)
             sorted_names = np.array(self.neuron_name)[sorted_name_indices]
             sorted_neuron_ids = np.array(self.neuron_id)[sorted_name_indices]
@@ -1107,39 +1118,53 @@ class SnuddaInput(object):
             chunks_types = np.array_split(sorted_neuron_types, len(d_view))
             chunks_pop_units = np.array_split(sorted_neuron_pop_units, len(d_view))
             
+            
+            
             for i, engine_id in enumerate(self.rc.ids):
                 engine = self.rc[i]
-            
-                # Assign each chunk directly instead of slicing manually
                 engine_neuron_ids = chunks_ids[i]
                 engine_neuron_names = chunks_names[i]
                 engine_neuron_types = chunks_types[i]
                 engine_pop_units = chunks_pop_units[i]
+                neuron_ids_str = {str(n) for n in engine_neuron_ids}
+                engine_input_info = {int(n): self.input_info[n] for n in neuron_ids_str if n in self.input_info}
+                engine_network_data = {int(n): self.network_data_lookup[n] for n in engine_neuron_ids }
+                engine_spike_data_filename = self.spike_data_filename + '_' + str(i)
+                
 
                 engine.push({
-                    'neuron_id': engine_neuron_ids,
-                    'neuron_name': engine_neuron_names, 
-                    'neuron_type': engine_neuron_types, 
-                    'population_unit_id': engine_pop_units
-
+                    'neuron_ids': engine_neuron_ids,
+                    'neuron_names': engine_neuron_names, 
+                    'neuron_types': self.neuron_type, 
+                    'population_unit_ids': engine_pop_units,
+                    'input_info_subset' : engine_input_info, 
+                    'network_data_subset':engine_network_data,
+                    'spike_data_filename': engine_spike_data_filename
                 })
-
-            cmd_str = "nl.setup_input_serial(neuron_id = neuron_id, neuron_name = neuron_name, neuron_type = neuron_type, population_unit_id = population_unit_id)"
+                
+            self.write_log(f"Pushed data to engines")
+            cmd_str = "nl.setup_input_serial(neuron_ids = neuron_ids, neuron_names = neuron_names, population_unit_ids = population_unit_ids, input_info_subset = input_info_subset, network_data_subset = network_data_subset)"
             d_view.execute(cmd_str, block=True)
             
-            self.input_list = d_view.gather("nl.neuron_input", block=True)
             
-            self.neuron_input = dict([])
+            self.write_log(f"input set up, writing to hdf5")
+            
+            cmd_str1 = "nl.write_hdf5_optimized(spike_data_filename = spike_data_filename)"
+            d_view.execute(cmd_str1, block=True)
+            
+            # self.input_list = d_view.gather("nl.neuron_input", block=True)
+            
+            # self.neuron_input = dict([])
 
-            for e_id in self.input_list:
-                for n_id in e_id.keys():
-                    self.neuron_input[n_id] = dict([])
-                    for input_type in e_id[n_id].keys():
-                        self.neuron_input[n_id][input_type] = e_id[n_id][input_type]
+            # for e_id in self.input_list:
+            #     for n_id in e_id.keys():
+            #         self.neuron_input[n_id] = dict([])
+            #         for input_type in e_id[n_id].keys():
+            #             self.neuron_input[n_id][input_type] = e_id[n_id][input_type]
     
-        return self.neuron_input
+        return #self.neuron_input
 
-    def setup_input_serial(self, neuron_id, neuron_name, neuron_type, population_unit_id): 
+    def setup_input_serial(self, neuron_ids, neuron_names, population_unit_ids, input_info_subset = None, network_data_subset = None): 
         
         self.neuron_input = dict([])
 
@@ -1155,34 +1180,43 @@ class SnuddaInput(object):
         population_unit_id_list = []
         conductance_list = []
         correlation_list = []
-
         mod_file_list = []
         parameter_file_list = []
         parameter_list_list = []
         cluster_size_list = []
         cluster_spread_list = []
-
         generator_list = []
         population_unit_fraction_list = []
         num_soma_synapses_list = []
 
         dendrite_location_override_list = []
             
-        for (neuron_id, neuron_name, neuron_type, population_unit_id) \
-                in zip(neuron_id, neuron_name, neuron_type, population_unit_id):
+        if input_info_subset == None:
+            input_info_subset = self.input_info
+            
+        if network_data_subset == None:
+            network_data_subset = {int(n): self.network_data_lookup[n] for n in neuron_ids}
+            
+        for (neuron_id, neuron_name, population_unit_id) \
+                in zip(neuron_ids, neuron_names, population_unit_ids):
 
             self.neuron_input[neuron_id] = dict([])
 
-            if str(neuron_id) in self.input_info:
-                input_info = copy.deepcopy(self.input_info[str(neuron_id)])
-            elif neuron_name in self.input_info:
-                input_info = copy.deepcopy(self.input_info[neuron_name])
-            elif neuron_type in self.input_info:
-                input_info = copy.deepcopy(self.input_info[neuron_type])
+            # The input can be specified using neuron_id, neuron_name or neuron_type
+            input_info = input_info_subset.get(neuron_id)
+            if input_info is not None: 
+                input_info = copy.deepcopy(input_info_subset[neuron_id])
+            elif neuron_name in input_info_subset:
+                input_info = copy.deepcopy(input_info_subset[neuron_name])
+            # elif neuron_type in input_info_subset:
+            #     input_info = copy.deepcopy(input_info_subset[neuron_type])
             else:
                 input_info = dict()
-                
-            if self.neuron_info[neuron_id]["virtual_neuron"]:
+
+            neuron_data = network_data_subset[neuron_id]
+            if neuron_data["virtual_neuron"]:
+                # Is a virtual neuron, we will read activity from file, skip neuron
+
                 if "virtual_neuron" in input_info:
                     self.neuron_input[neuron_id]["virtual_neuron"] = input_info["virtual_neuron"]
                 else:
@@ -1192,9 +1226,21 @@ class SnuddaInput(object):
             elif "virtual_neuron" in input_info:
                 del input_info["virtual_neuron"]
 
+            # Also see if we have additional input specified in the meta.json file for the neuron?
+
+            # Add baseline activity:
+            #  1. From neuron_id derive the parameter_id and morphology_id
+            #  2. Using parameter_id, morphology_id check if the meta.json has any additional input specified
+            #  3. Add the input to input_info
+
+            parameter_key = neuron_data["parameter_key"]
+            morphology_key = neuron_data["morphology_key"]
+            neuron_path = snudda_parse_path(neuron_data["neuron_path"], self.snudda_data)
+
             parameter_key = self.network_data["neurons"][neuron_id]["parameter_key"]
             morphology_key = self.network_data["neurons"][neuron_id]["morphology_key"]
             neuron_path = snudda_parse_path(self.network_data["neurons"][neuron_id]["neuron_path"], self.snudda_data)
+
             meta_path = os.path.join(neuron_path, "meta.json")
 
             if self.use_meta_input and os.path.exists(meta_path):
@@ -1233,7 +1279,7 @@ class SnuddaInput(object):
                                 extra_copy_inp_data = copy.deepcopy(meta_inp_data_copy)
 
                                 if "population_unit_id" in input_info[existing_inp_name] \
-                                    and self.network_data["neurons"][neuron_id]["population_unit"] \
+                                    and neuron_data["population_unit"] \
                                         != input_info[existing_inp_name]["population_unit_id"]:
                                     continue
 
@@ -1468,7 +1514,7 @@ class SnuddaInput(object):
                     assert "morphology_key" in input_inf, \
                         f"If you specify dendrite_location you must also specify morphology_key"
 
-                    assert morphology_key == self.network_data["neurons"][neuron_id]["morphology_key"], \
+                    assert morphology_key == neuron_data["morphology_key"], \
                         f"Neuron {neuron_id} has morphology_key " \
                         f"{self.network_data['neurons'][neuron_id]['morphology_key']}" \
                         f"which does not match what is specified in input JSON file: {morphology_key}"
@@ -2295,9 +2341,10 @@ class SnuddaInput(object):
 
         self.d_view.execute(cmd_str, block=True)
 
-        self.write_log("Read network config and input_info on workers")
-        cmd_str3 = "nl.read_input_config_file()"
-        self.d_view.execute(cmd_str3, block=True)
+        # self.write_log("Read network config on workers")
+        # cmd_str3 = "nl.read_network_config_file()"
+        # self.d_view.execute(cmd_str3, block=True)
+
 
         self.write_log("Workers set up")
 
