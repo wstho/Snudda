@@ -1463,8 +1463,6 @@ class SnuddaInput(object):
                                 n_inp = input_inf["num_inputs"][dir_name]
                             elif neuron_name in input_inf["num_inputs"]:
                                 n_inp = input_inf["num_inputs"][neuron_name]
-                            elif neuron_type in input_inf["num_inputs"]:
-                                n_inp = input_inf["num_inputs"][neuron_type]
                             else:
                                 n_inp = None
                         else:
@@ -1490,7 +1488,7 @@ class SnuddaInput(object):
 
                 correlation_list.append(input_inf.get("population_unit_correlation", 0))
                 population_unit_fraction_list.append(input_inf.get("population_unit_correlation_fraction", 1))
-
+                '''
                 if (neuron_type in self.population_unit_spikes
                         and input_type in self.population_unit_spikes[neuron_type]
                         and population_unit_id in self.population_unit_spikes[neuron_type][input_type]):
@@ -1498,7 +1496,8 @@ class SnuddaInput(object):
                     c_spikes = self.population_unit_spikes[neuron_type][input_type][population_unit_id]
                     population_unit_spikes_list.append(c_spikes)
                 else:
-                    population_unit_spikes_list.append(None)
+                '''
+                population_unit_spikes_list.append(None)
 
                 mod_file_list.append(mod_file)
                 parameter_file_list.append(parameter_file)
