@@ -1458,18 +1458,33 @@ class SnuddaInput(object):
                     if "num_inputs" in input_inf:
                         dir_name = snudda_parse_path(os.path.basename(neuron_path), self.snudda_data)
                         
+
                         if isinstance(input_inf["num_inputs"], list):
                             rng_num_inputs = np.random.default_rng()
                             num_inputs = max(1, int(rng_num_inputs.normal(input_inf["num_inputs"][0], input_inf["num_inputs"][1])))
                         else:
                             num_inputs = int(input_inf["num_inputs"])
                             
+
+                        # if type(input_inf["num_inputs"]) == OrderedDict:
+                        #     if morphology_key in input_inf["num_inputs"]:
+                        #         n_inp = input_inf["num_inputs"][morphology_key]
+                        #     elif dir_name in input_inf["num_inputs"]:
+                        #         n_inp = input_inf["num_inputs"][dir_name]
+                        #     elif neuron_name in input_inf["num_inputs"]:
+                        #         n_inp = input_inf["num_inputs"][neuron_name]
+                        #     # elif neuron_type in input_inf["num_inputs"]:
+                        #     #     n_inp = input_inf["num_inputs"][neuron_type]
+                        #     else:
+                        #         n_inp = None
+                        # else:
+                        #     n_inp = input_inf["num_inputs"]
+                        
                         if "n_presynaptic" in input_inf:
                             
                             if isinstance(input_inf["n_presynaptic"], list):
                                 rng_num_pre = np.random.default_rng()
                                 num_pre = max(1, int(rng_num_pre.normal(input_inf["n_presynaptic"][0], input_inf["n_presynaptic"][1])))
-
                             else:
                                 num_pre = int(input_inf["n_presynaptic"])
                             
@@ -1498,6 +1513,13 @@ class SnuddaInput(object):
                 correlation_list.append(input_inf.get("population_unit_correlation", 0))
                 population_unit_fraction_list.append(input_inf.get("population_unit_correlation_fraction", 1))
 
+                # if (neuron_type in self.population_unit_spikes
+                #         and input_type in self.population_unit_spikes[neuron_type]
+                #         and population_unit_id in self.population_unit_spikes[neuron_type][input_type]):
+
+                #     c_spikes = self.population_unit_spikes[neuron_type][input_type][population_unit_id]
+                #     population_unit_spikes_list.append(c_spikes)
+                # else:
                 population_unit_spikes_list.append(None)
 
                 mod_file_list.append(mod_file)
@@ -1505,7 +1527,21 @@ class SnuddaInput(object):
                 parameter_list_list.append(parameter_list)
 
                 cluster_size = input_inf.get("cluster_size", None)
-                cluster_spread = input_inf.get("cluster_spread", 20e-6)
+                
+                if cluster_size is not None and hasattr(cluster_size, "__len__") and len(cluster_size) > 1:
+                    loc = cluster_size[0]
+                    scale = cluster_size[1]
+                    normal_value = rng_num_inputs.normal(loc=loc, scale=scale)
+                    cluster_size = max(1, round(normal_value))
+                
+                cluster_spread = input_inf.get("cluster_size", 20e-6)
+                
+                if cluster_spread is not None and hasattr(cluster_spread, "__len__") and len(cluster_spread) > 1:
+
+                    loc = cluster_spread[0]
+                    scale = cluster_spread[1]
+                    normal_value = rng_num_inputs.normal(loc=loc, scale=scale)
+                    cluster_spread = max(1, round(normal_value))
 
                 cluster_size_list.append(cluster_size)
                 cluster_spread_list.append(cluster_spread)
@@ -2187,6 +2223,8 @@ class SnuddaInput(object):
         morphology_key = self.neuron_info[neuron_id]["morphology_key"]
         modulation_key = self.neuron_info[neuron_id]["modulation_key"]
 
+
+
         # TODO: If the morphology is a bent morphology, we need to special treat it!
         if neuron_path not in morphology_path:
 
@@ -2227,6 +2265,7 @@ class SnuddaInput(object):
         #                                                                  morphology_id=morphology_id,
         #                                                                  parameter_key=parameter_key,
         #                                                                  morphology_key=morphology_key)
+
 
         if cluster_size is not None:
             cluster_size = min(cluster_size, num_spike_trains)
@@ -2540,6 +2579,10 @@ class SnuddaInput(object):
                 
                 if isinstance(num_spike_trains, list):
                     num_spike_trains = len(num_spike_trains)
+                    
+                    
+                    
+                    
                 input_loc = self.dendrite_input_locations(neuron_id=neuron_id,
                                                           synapse_density=synapse_density,
                                                           num_spike_trains=num_spike_trains,
