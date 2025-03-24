@@ -1101,8 +1101,9 @@ class SnuddaInput(object):
 
         if d_view is None:
             self.write_log("No d_view specified, running in serial", force_print=True)
-            self.setup_input_serial(neuron_id = self.neuron_id, neuron_name = self.neuron_name, neuron_type = self.neuron_type, population_unit_id= self.population_unit_id)
-
+            self.network_data_lookup = {n['neuron_id']: n for n in self.network_data['neurons']}
+            self.setup_input_serial(neuron_ids = self.neuron_id, neuron_names = self.neuron_name,  population_unit_ids= self.population_unit_id)
+            self.write_hdf5_optimized(spike_data_filename= self.spike_data_filename)
         else:
             
             self.network_data_lookup = {n['neuron_id']: n for n in self.network_data['neurons']}
@@ -1196,6 +1197,7 @@ class SnuddaInput(object):
             
         if network_data_subset == None:
             network_data_subset = {int(n): self.network_data_lookup[n] for n in neuron_ids}
+            
             
         for (neuron_id, neuron_name, population_unit_id) \
                 in zip(neuron_ids, neuron_names, population_unit_ids):
@@ -1305,7 +1307,7 @@ class SnuddaInput(object):
 
             if len(input_info) == 0:
                 self.write_log(f"!!! Warning, no synaptic input for neuron ID {neuron_id}, "
-                               f"name {neuron_name} or type {neuron_type}")
+                               f"name {neuron_name}")
 
             for input_type in input_info:
 
@@ -1455,18 +1457,25 @@ class SnuddaInput(object):
 
                     if "num_inputs" in input_inf:
                         dir_name = snudda_parse_path(os.path.basename(neuron_path), self.snudda_data)
-
-                        if type(input_inf["num_inputs"]) == OrderedDict:
-                            if morphology_key in input_inf["num_inputs"]:
-                                n_inp = input_inf["num_inputs"][morphology_key]
-                            elif dir_name in input_inf["num_inputs"]:
-                                n_inp = input_inf["num_inputs"][dir_name]
-                            elif neuron_name in input_inf["num_inputs"]:
-                                n_inp = input_inf["num_inputs"][neuron_name]
-                            else:
-                                n_inp = None
+                        
+                        if isinstance(input_inf["num_inputs"], list):
+                            rng_num_inputs = np.random.default_rng()
+                            num_inputs = max(1, int(rng_num_inputs.normal(input_inf["num_inputs"][0], input_inf["num_inputs"][1])))
                         else:
-                            n_inp = input_inf["num_inputs"]
+                            num_inputs = int(input_inf["num_inputs"])
+                            
+                        if "n_presynaptic" in input_inf:
+                            
+                            if isinstance(input_inf["n_presynaptic"], list):
+                                rng_num_pre = np.random.default_rng()
+                                num_pre = max(1, int(rng_num_pre.normal(input_inf["n_presynaptic"][0], input_inf["n_presynaptic"][1])))
+
+                            else:
+                                num_pre = int(input_inf["n_presynaptic"])
+                            
+                            n_inp = num_inputs*int(num_pre)
+                        else:
+                            n_inp = num_inputs
                         
                     else:
                         n_inp = None
@@ -1488,15 +1497,7 @@ class SnuddaInput(object):
 
                 correlation_list.append(input_inf.get("population_unit_correlation", 0))
                 population_unit_fraction_list.append(input_inf.get("population_unit_correlation_fraction", 1))
-                '''
-                if (neuron_type in self.population_unit_spikes
-                        and input_type in self.population_unit_spikes[neuron_type]
-                        and population_unit_id in self.population_unit_spikes[neuron_type][input_type]):
 
-                    c_spikes = self.population_unit_spikes[neuron_type][input_type][population_unit_id]
-                    population_unit_spikes_list.append(c_spikes)
-                else:
-                '''
                 population_unit_spikes_list.append(None)
 
                 mod_file_list.append(mod_file)
@@ -2229,6 +2230,8 @@ class SnuddaInput(object):
 
         if cluster_size is not None:
             cluster_size = min(cluster_size, num_spike_trains)
+            
+            
         rng = np.random.default_rng()   ### No longer deterministic
         
         self.num_spike_trains = num_spike_trains
@@ -2534,6 +2537,9 @@ class SnuddaInput(object):
             else:
 
                 # (x,y,z), secID, secX, dist_to_soma
+                
+                if isinstance(num_spike_trains, list):
+                    num_spike_trains = len(num_spike_trains)
                 input_loc = self.dendrite_input_locations(neuron_id=neuron_id,
                                                           synapse_density=synapse_density,
                                                           num_spike_trains=num_spike_trains,
