@@ -1193,12 +1193,11 @@ class SnuddaInput(object):
         dendrite_location_override_list = []
             
         if input_info_subset == None:
-            input_info_subset = self.input_info
+            input_info_subset = {int(n): self.input_info[str(n)] for n in neuron_ids if str(n) in self.input_info}
             
         if network_data_subset == None:
             network_data_subset = {int(n): self.network_data_lookup[n] for n in neuron_ids}
-            
-            
+
         for (neuron_id, neuron_name, population_unit_id) \
                 in zip(neuron_ids, neuron_names, population_unit_ids):
 
@@ -1210,7 +1209,7 @@ class SnuddaInput(object):
                 input_info = copy.deepcopy(input_info_subset[neuron_id])
             elif neuron_name in input_info_subset:
                 input_info = copy.deepcopy(input_info_subset[neuron_name])
-            # elif neuron_type in input_info_subset:
+            # elif neuron_type in input_info_subset: d
             #     input_info = copy.deepcopy(input_info_subset[neuron_type])
             else:
                 input_info = dict()
