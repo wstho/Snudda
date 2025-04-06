@@ -1209,7 +1209,7 @@ class SnuddaInput(object):
                 input_info = copy.deepcopy(input_info_subset[neuron_id])
             elif neuron_name in input_info_subset:
                 input_info = copy.deepcopy(input_info_subset[neuron_name])
-            # elif neuron_type in input_info_subset: d
+            # elif neuron_type in input_info_subset: 
             #     input_info = copy.deepcopy(input_info_subset[neuron_type])
             else:
                 input_info = dict()

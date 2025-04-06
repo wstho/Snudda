@@ -102,7 +102,7 @@ class SnuddaSimulate(object):
                 self.input_file = default_input_file
                 
             else:
-                print("Warning: No external synaptic input file given!")
+                #print("Warning: No external synaptic input file given!")
                 self.input_file = None
         else:
             self.input_file = input_file
@@ -1185,7 +1185,7 @@ class SnuddaSimulate(object):
     
     def get_multiple_input_files(self):
 
-        filename = self.network_file
+        filename = self.input_file
         directory = os.path.dirname(filename)
         input_files = [os.path.join(directory, f) for f in os.listdir(directory) if "input-spikes.hdf5" in f]
         
