@@ -196,8 +196,10 @@ class SnuddaPlace(object):
                        pos_file = os.path.join(root, filename)
 
         position = np.array([np.loadtxt(pos_file)*1e-6])
+        
         print(position)
         return position
+    
     
     def add_neurons(self,
                     swc_path,
@@ -257,7 +259,8 @@ class SnuddaPlace(object):
         neuron_type = name.split("_")[0]
         
         if read_positions: 
-            neuron_positions = self.get_position_from_file(swc_path)
+            # neuron_positions = self.get_position_from_file(swc_path)
+            neuron_positions = np.array([0,0,0])
         else:
             neuron_positions = self.volume[volume_id]["mesh"].place_neurons(num_neurons, neuron_type)
 
@@ -395,8 +398,8 @@ class SnuddaPlace(object):
             else:
                 raise ValueError(f"Unable to find mesh_file {volume_data['mesh_file']}")
 
-            if "num_putative_points" in volume_data:
-                num_putative_points = int(volume_data["num_putative_points"])
+            if "n_putative_points" in volume_data:
+                num_putative_points = int(volume_data["n_putative_points"])
             else:
                 num_putative_points = None
 

@@ -114,6 +114,10 @@ class NeuronMorphologyExtended:
                 lazy_loading (bool) : use lazy loading for morphology data
 
         """
+        # print(self.morphology_data)
+        # print(position)
+        # print(rotation)
+        # print(swc_file)
 
         if not overwrite and name in self.morphology_data:
             raise KeyError(f"Error when loading {swc_file}, key {name} already exists in morphology_data")

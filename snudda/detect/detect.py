@@ -2543,6 +2543,7 @@ class SnuddaDetect(object):
             morphology_path = None  # Get morpholog automatically from morphology_key
 
         # Clone prototype neuron (it is centred, and not rotated)
+        
         neuron = self.prototype_neurons[neuron_info["name"]].clone(parameter_key=neuron_info["parameter_key"],
                                                                    morphology_key=neuron_info["morphology_key"],
                                                                    modulation_key=neuron_info["modulation_key"],

@@ -272,7 +272,8 @@ class MorphologyData:
             raise IndexError(f"ID does not start from 1 ({swc_file})")
 
         if not (data[0, 2:5] == [0, 0, 0]).all():
-            raise ValueError(f"Does not have root centered at origo ({swc_file})")
+            print(f"Does not have root centered at origo ({swc_file})")
+            # raise ValueError(f"Does not have root centered at origo ({swc_file})")
 
         if data[0, 6] != -1:
             raise ValueError(f"First element must be root, and have parent ID -1 ({swc_file})")
@@ -715,7 +716,8 @@ class MorphologyData:
         if 1 in self.point_lookup:
             soma_position = self.geometry[self.point_lookup[1], :3]
             if not (soma_position == 0).all():
-                raise ValueError("Soma must be centered at origo before placement.")
+                print("Soma must be centered at origo before placement.")
+                # raise ValueError("Soma must be centered at origo before placement.")
         elif 2 in self.point_lookup:
             # We have no soma, so it is probably an axonal tree, check that it is centered
             axon_root_position = self.geometry[self.point_lookup[2][0], :3]

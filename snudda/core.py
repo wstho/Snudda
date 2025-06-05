@@ -816,7 +816,7 @@ class Snudda(object):
         
         if 'VC' in str(self.network_path):
            print('Voltage Clamping')
-           sim.add_voltage_clamp([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50], voltage = -0.07, duration= 3.0, save_i_flag=True)
+           sim.add_voltage_clamp([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50], voltage = 0.04, duration= 3.0, save_i_flag=True)
            # sim.add_voltage_clamp([1], voltage = -0.07, duration= 3.0, save_i_flag=True)
 
 
@@ -826,6 +826,17 @@ class Snudda(object):
             # sim.add_volt_recording_all()
             # Either use record_volt or specify "record_all_soma" in simulation_config file
             sim.add_volt_recording_soma()
+            # sim.add_volt_recording(0,[10],[0.5])
+            # sim.add_volt_recording(1,[9],[0.5])
+            # sim.add_volt_recording(2,[8],[0.5])
+            # sim.add_volt_recording(3,[12],[0.5])
+            # sim.add_volt_recording(4,[10],[0.5])
+            
+            # sim.add_volt_recording(0,[3],[0.5])
+            # sim.add_volt_recording(1,[4],[0.5])
+            # sim.add_volt_recording(2,[5],[0.5])
+            # sim.add_volt_recording(3,[2],[0.5])
+            # sim.add_volt_recording(4,[6],[0.5])
             # sim.addRecordingOfType("dSPN",5) # Side len let you record from a subset
 
         if record_all:

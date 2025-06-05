@@ -50,6 +50,16 @@ class RegionMeshRedux:
 
         return signed_distance
 
+    def closest_point_on_border(self, points):
+
+
+        query_point = o3d.core.Tensor(points, dtype=o3d.core.Dtype.Float32)
+        closest_point = self.scene.compute_closest_points(query_point)
+
+        return closest_point
+
+
+
     def plot(self, line_set=None, neurons=None, show_axis=False, show_faces=True):
 
         # Press w to see wireframe...

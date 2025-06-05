@@ -1358,20 +1358,26 @@ class SnuddaInput(object):
                     synapse_density = input_inf.get("synapse_density", "1")                        
                         
                     if "dendrite_location" in input_inf:
-                        assert "morphology_key" in input_inf, \
-                            f"If you specify dendrite_location you must also specify morphology_key"
+                        # assert "morphology_key" in input_inf, \
+                        #     f"If you specify dendrite_location you must also specify morphology_key"
 
-                        assert morphology_key == self.network_data["neurons"][neuron_id]["morphology_key"], \
-                            f"Neuron {neuron_id} has morphology_key " \
-                            f"{self.network_data['neurons'][neuron_id]['morphology_key']}" \
-                            f"which does not match what is specified in input JSON file: {morphology_key}"
+                        # assert morphology_key == self.network_data["neurons"][neuron_id]["morphology_key"], \
+                        #     f"Neuron {neuron_id} has morphology_key " \
+                        #     f"{self.network_data['neurons'][neuron_id]['morphology_key']}" \
+                        #     f"which does not match what is specified in input JSON file: {morphology_key}"
 
                         dendrite_location = input_inf["dendrite_location"]
+                        if isinstance(dendrite_location, dict):
+                            dendrite_location = dendrite_location[str(neuron_id)]
+                    
                         sec_id, sec_x = zip(*dendrite_location)
 
-                        x = y = z = dist_to_soma = np.zeros((len(sec_id),))
-                        input_loc = [(x, y, z), np.array(sec_id), np.array(sec_x), dist_to_soma]
-                        
+                        # x = y = z = dist_to_soma = np.zeros((len(sec_id),))
+                    
+                        xyz, dist_to_soma = self.get_defined_synapse_location(neuron_id, sec_id, sec_x)
+ 
+                        input_loc = [xyz, np.array(sec_id), np.array(sec_x), dist_to_soma]
+              
                     else:
                         
                         cluster_size = input_inf.get("cluster_size", None)
@@ -1655,7 +1661,102 @@ class SnuddaInput(object):
         return self.neuron_input
 
     ############################################################################
+    
+    
+    def get_defined_synapse_location(self, neuron_id, sec_id, sec_x):
+        
+        neuron_name = self.neuron_name[neuron_id]
+        neuron_path = self.neuron_info[neuron_id]["neuron_path"]
+        morphology_path = self.neuron_info[neuron_id]["morphology"]
+        parameter_key = self.neuron_info[neuron_id]["parameter_key"]
+        morphology_key = self.neuron_info[neuron_id]["morphology_key"]
+        modulation_key = self.neuron_info[neuron_id]["modulation_key"]
 
+        # If the morphology is a bend morphology, we need to special treat it!
+        if snudda_parse_path(neuron_path, snudda_data=self.snudda_data) \
+                not in snudda_parse_path(morphology_path, snudda_data=self.snudda_data):
+
+            assert "modified_morphologies" in morphology_path, \
+                f"input: neuron_path not in morphology_path, expected 'modified_morphologies' " \
+                f"in path: {morphology_path = }, {neuron_path = }"
+
+            # Bend morphologies are unique, need to load it separately
+            morphology = NeuronMorphologyExtended(name=neuron_name,
+                                                  position=None,  # This is set further down when using clone
+                                                  rotation=None,
+                                                  swc_filename=morphology_path,
+                                                  snudda_data=self.snudda_data,
+                                                  parameter_key=parameter_key,
+                                                  morphology_key=morphology_key,
+                                                  modulation_key=modulation_key)
+
+        elif neuron_name in self.neuron_cache:
+            if self.verbose:
+                self.write_log(f"About to clone cache of {neuron_name}.")
+
+            # Since we do not care about location of neuron in space, we can use get_cache_original
+            morphology = self.neuron_cache[neuron_name].clone(parameter_key=parameter_key,
+                                                              morphology_key=morphology_key,
+                                                              position=None, rotation=None,
+                                                              get_cache_original=True)
+        else:
+            if self.verbose:
+                self.write_log(f"Creating prototype {neuron_name}")
+
+            morphology_prototype = NeuronPrototype(neuron_name=neuron_name,
+                                                   snudda_data=self.snudda_data,
+                                                   neuron_path=neuron_path)
+            self.neuron_cache[neuron_name] = morphology_prototype
+            morphology = morphology_prototype.clone(parameter_key=parameter_key,
+                                                    morphology_key=morphology_key,
+                                                    position=None, rotation=None,
+                                                    get_cache_original=True)
+
+        if self.verbose:
+            self.write_log(f"morphology = {morphology}")
+            
+        geometry = morphology.morphology_data["neuron"].geometry
+        self.geom = geometry
+        section_data = morphology.morphology_data["neuron"].section_data
+        self.section_data = section_data
+        soma_dist = geometry[:, 4]
+        
+        sec_id = np.array(sec_id)
+        sec_x= np.array(sec_x)
+        coords_list = []
+        soma_dist_list = []
+        for s_id, s_x in zip(sec_id, sec_x):
+            s_x*=1e3
+            section_mask = section_data[:, 0][:, None] == s_id
+            section_indices = np.where(section_mask)[0]
+            section_x = section_data[section_indices, 1]
+            sec_idx = np.argmin(np.abs(s_x - section_x))
+            closest_idx = section_indices[sec_idx]
+            
+            if section_x[sec_idx] == s_x:
+                coords = geometry[closest_idx, :3]
+                soma_dist = geometry[closest_idx, 4]
+
+            elif section_x[sec_idx] < s_x and closest_idx < len(section_x)-1:
+                x = (s_x - section_x[sec_idx]) / (section_x[closest_idx+1] - section_x[sec_idx])
+                coords = x * geometry[closest_idx + 1, :3] + (1-x) * geometry[closest_idx, :3]
+                soma_dist = x * geometry[closest_idx + 1, 4] + (1-x) * geometry[closest_idx, 4]
+
+            else:
+                x = (section_x[sec_idx] - s_x) / (section_x[sec_idx] - section_x[sec_idx - 1])
+                coords = x * geometry[closest_idx - 1, :3] + (1-x) * geometry[closest_idx, :3]
+                soma_dist = x * geometry[closest_idx - 1, 4] + (1-x) * geometry[closest_idx, 4]
+                
+
+            coords_list.append(coords)
+            soma_dist_list.append(soma_dist)
+            
+        coords_list = np.array(coords_list)
+        soma_dist_list = np.array(soma_dist_list)
+        
+        return coords_list, soma_dist_list
+            
+        
     def generate_spikes_helper(self, frequency, time_range, rng, input_generator=None):
 
         if input_generator == "poisson":
