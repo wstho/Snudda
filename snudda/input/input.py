@@ -1336,7 +1336,7 @@ class SnuddaInput(object):
                     csv_file = snudda_parse_path(input_inf["csv_file"] % neuron_id, self.snudda_data)
                     self.neuron_input[neuron_id][input_type]["generator"] = "csv"
                     csv_spikes = self.import_csv_spikes(csv_file=csv_file)
-
+                    
                     if "num_inputs" in input_inf:
                         if isinstance(input_inf["num_inputs"], list):
                             rng_num_inputs = np.random.default_rng()
@@ -1344,8 +1344,9 @@ class SnuddaInput(object):
                         else:
                             num_inputs = int(input_inf["num_inputs"])
                         csv_spikes = csv_spikes[:num_inputs]
-                        
+
                     num_spike_trains = len(csv_spikes)
+
                     
                     rng_master = np.random.default_rng(self.random_seed + neuron_id + 10072)
                     self.neuron_input[neuron_id][input_type]["spikes"] = csv_spikes
@@ -1369,7 +1370,7 @@ class SnuddaInput(object):
                         dendrite_location = input_inf["dendrite_location"]
                         if isinstance(dendrite_location, dict):
                             dendrite_location = dendrite_location[str(neuron_id)]
-                    
+
                         sec_id, sec_x = zip(*dendrite_location)
 
                         # x = y = z = dist_to_soma = np.zeros((len(sec_id),))
@@ -1401,6 +1402,7 @@ class SnuddaInput(object):
                             n_soma_synapses = input_inf["num_soma_synapses"]
                         elif "p_soma_synapses" in input_inf:
                             n_soma_synapses = int(np.rint(input_inf["p_soma_synapses"]*num_spike_trains))
+                            print(n_soma_synapses)
                         else:
                             n_soma_synapses = 0
 
@@ -2742,7 +2744,7 @@ class SnuddaInput(object):
 
     ############################################################################
 
-    def import_csv_spikes_old(self, csv_file):
+    def import_csv_spikes(self, csv_file):
 
         spikes = []
         with open(csv_file, "r") as f:
@@ -2753,7 +2755,7 @@ class SnuddaInput(object):
         return spikes
 
 
-    def import_csv_spikes(self, csv_file):
+    '''def import_csv_spikes(self, csv_file):
         """
         Load and sort spike times from CSV file using optimized methods.
         Each row contains comma-separated spike times that need to be sorted.
@@ -2786,7 +2788,7 @@ class SnuddaInput(object):
                 import pandas as pd
                 df = pd.read_csv(csv_file, header=None)
                 return [np.sort(row.dropna().values) for _, row in df.iterrows()]
-
+    '''
 if __name__ == "__main__":
     print("Please do not call this file directly, use snudda command line")
     sys.exit(-1)

@@ -1184,9 +1184,10 @@ class SnuddaSimulate(object):
     
     
     def get_multiple_input_files(self):
-
-        filename = self.input_file
-        directory = os.path.dirname(filename)
+        if self.input_file:
+            directory = os.path.dirname(self.input_file)
+        else:
+            directory = self.network_path
         input_files = [os.path.join(directory, f) for f in os.listdir(directory) if "input-spikes.hdf5" in f]
         
         return input_files
