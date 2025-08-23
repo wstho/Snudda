@@ -66,6 +66,22 @@ class SnuddaRotate:
         elif rotation_mode in ["random", "default"]:
             rotation_matrices = [self.rand_rotation_matrix(rand_nums=rng.random(size=(3,)))
                                  for x in range(0, neuron_positions.shape[0])]
+            
+        elif rotation_mode == "custom":
+            
+            
+            AP_aligned = [np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]]) for x in range(0, neuron_positions.shape[0])]
+            deflections = [self.rand_rotation_matrix(deflection=0.15,rand_nums=rng.random(size=(3,)))
+                                  for x in range(0, neuron_positions.shape[0])]
+            
+            rotation_matrices = [R2 @ R1 for R1, R2 in zip(AP_aligned, deflections)]
+            
+            
+            ###deflects about Z axis by ~30°
+        
+        
+            # rotation_matrices = [np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]]) for x in range(0, neuron_positions.shape[0])]
+           
 
         elif "vector_field" in rotation_mode:
             rotation_vectors = griddata(points=field_position,

@@ -1402,7 +1402,6 @@ class SnuddaInput(object):
                             n_soma_synapses = input_inf["num_soma_synapses"]
                         elif "p_soma_synapses" in input_inf:
                             n_soma_synapses = int(np.rint(input_inf["p_soma_synapses"]*num_spike_trains))
-                            print(n_soma_synapses)
                         else:
                             n_soma_synapses = 0
 

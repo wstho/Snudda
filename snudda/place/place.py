@@ -157,7 +157,7 @@ class SnuddaPlace(object):
         """ Place neurons in 3D space. """
 
         self.parse_config()
-        print('Parsing')
+
         if self.morphologies_stay_inside:
             print('AVOIDING EDGES')
             self.avoid_edges_parallel()

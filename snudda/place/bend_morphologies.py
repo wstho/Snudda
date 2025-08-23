@@ -49,6 +49,7 @@ class BendMorphologies:
         parent_direction = dict()
 
         old_rotation_representation = self.get_full_rotation_representation(morphology=morphology)
+
         new_rotation_representation = dict()
         morphology_changed = False
 
@@ -57,9 +58,13 @@ class BendMorphologies:
                 parent_dir, parent_point, parent_dist, parent_moved = parent_direction[section.section_id, section.section_type]
             else:
                 if morphology.rotation is not None:
-                    parent_dir = np.matmul(morphology.rotation, np.array([[0], [0], [1]])).T
+                    # parent_dir = np.matmul(morphology.rotation, np.array([[0], [0], [1]])).T
+                    # print(morphology.rotation)
+                    # parent_dir = morphology.rotation
+                    parent_dir = np.array([[1, 0, 0]])
+
                 else:
-                    parent_dir = np.array([[0, 0, 1]])
+                    parent_dir = np.array([[1, 0, 0]])
 
                 if morphology.position is not None:
                     parent_point = morphology.position
@@ -145,7 +150,7 @@ class BendMorphologies:
             if (section.section_id, section.section_type) in parent_direction.keys():
                 parent_dir = parent_direction[section.section_id, section.section_type]
             else:
-                parent_dir = np.array([[0, 0, 1]])
+                parent_dir = np.array([[1, 0, 0]])
 
             try:
                 rot_and_len, last_direction = self.rotation_representation(section=section, parent_direction=parent_dir)
@@ -166,7 +171,6 @@ class BendMorphologies:
 
         parent_direction = dict()
 
-        # new_coords = np.zeros((morphology.geometry.shape[0], 3))
         new_coords = np.full((morphology.geometry.shape[0], 3), np.nan)  # Use nan as fill value, to see problems
 
         for section in morphology.section_iterator():
@@ -174,9 +178,12 @@ class BendMorphologies:
                 parent_dir, parent_pos = parent_direction[section.section_id, section.section_type]
             else:
                 if morphology.rotation is not None:
-                    parent_dir = np.matmul(morphology.rotation, np.array([[0, 0, 1]]).T).T
+                    # parent_dir = np.matmul(morphology.rotation, np.array([[0, 0, 1]]).T).T
+                    parent_dir = np.array([[1, 0, 0]])
+
                 else:
-                    parent_dir = np.array([[0, 0, 1]])
+
+                    parent_dir = np.array([[1, 0, 0]])
 
                 if morphology.position is not None:
                     parent_pos = morphology.position
@@ -222,7 +229,7 @@ class BendMorphologies:
         """ Represent each section as a series of length of segment, and rotations relative the parent segment."""
 
         if parent_direction is None:
-            # parent_direction = np.array([[1, 0, 0]])
+            print('No parent direction')
             parent_direction = np.array([0, 0, 1])
 
         rotations_and_length = []
@@ -361,8 +368,18 @@ class BendMorphologies:
                                  k_dist=30e-6, max_angle=0.1, n_random=5,
                                  random_seed=None):
 
+        # original_rotation = None
+        # print(f'Original Rotation: {original_rotation}')
+        md = MorphologyData(swc_file=swc_file)
+        md.place(rotation=None, position=original_position)
+        np.savetxt("unbent.csv", md.geometry[:,:3], 
+                      delimiter = ",")
         md = MorphologyData(swc_file=swc_file)
         md.place(rotation=original_rotation, position=original_position)
+        np.savetxt("rot.csv", md.geometry[:,:3], 
+                      delimiter = ",")
+        
+        
         rot_rep, morphology_changed = self.bend_morphology(md,
                                                            k_dist=k_dist, max_angle=max_angle,
                                                            n_random=n_random,
@@ -371,6 +388,8 @@ class BendMorphologies:
         if morphology_changed:
             new_coord = self.apply_rotation(md, rot_rep)
             md.geometry[:, :3] = new_coord
+            np.savetxt("bent.csv", md.geometry[:,:3], 
+                          delimiter = ",")
             self.write_swc(morphology=md, output_file=new_file)
             return new_file
 
@@ -380,7 +399,7 @@ class BendMorphologies:
 
 def test_rotation_representation():
 
-    file_path = "../data/neurons/striatum/dspn/str-dspn-e150602_c1_D1-mWT-0728MSN01-v20190508/WT-0728MSN01-cor-rep-ax.swc"
+    file_path = "/Users/wst/Desktop/Karolinska/Simulation/Neuron/neurons/rotated_lateral/070722_PV_tdtom_Camkii_ChR2_M1_8original/070722_PV_tdtom_Camkii_ChR2_M1_8correctedmodrot.swc"
 
     md = MorphologyData(swc_file=file_path)
 
@@ -402,7 +421,7 @@ def test_rotation_representation():
 
 def test_write():
 
-    file_path = "../data/neurons/striatum/dspn/str-dspn-e150602_c1_D1-mWT-0728MSN01-v20190508/WT-0728MSN01-cor-rep-ax.swc"
+    file_path = "/Users/wst/Desktop/Karolinska/Simulation/Neuron/neurons/rotated_lateral/070722_PV_tdtom_Camkii_ChR2_M1_8original/070722_PV_tdtom_Camkii_ChR2_M1_8correctedmodrot.swc"
     md = MorphologyData(swc_file=file_path)
     bm = BendMorphologies(None, rng=np.random.default_rng())
     bm.write_swc(morphology=md, output_file="test-write.swc")
@@ -413,9 +432,9 @@ def test_write():
 
 def test_bending():
 
-    file_path = "../data/neurons/striatum/dspn/str-dspn-e150602_c1_D1-mWT-0728MSN01-v20190508/WT-0728MSN01-cor-rep-ax.swc"
+    file_path = "/Users/wst/Desktop/Karolinska/Simulation/Neuron/neurons/rotated_lateral/070722_PV_tdtom_Camkii_ChR2_M1_8original/070722_PV_tdtom_Camkii_ChR2_M1_8correctedmodrot.swc"
     # file_path = "delme3.swc"
-    mesh_path = "../data/mesh/Striatum-d-right.obj"
+    mesh_path =  '/Users/wst/Desktop/Karolinska/Meshes/SNr/SNr_total.obj'
 
     nm = NeuronMorphologyExtended(swc_filename=file_path)
 
@@ -452,10 +471,10 @@ if __name__ == "__main__":
     import cProfile
 
     # test_write()
-    test_rotation_representation()
+    # test_rotation_representation()
 
-    profiler = cProfile.Profile()
-    profiler.enable()
+    # profiler = cProfile.Profile()
+    # profiler.enable()
 
     test_bending()
 

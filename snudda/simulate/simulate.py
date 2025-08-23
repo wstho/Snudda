@@ -290,13 +290,13 @@ class SnuddaSimulate(object):
             if "record_all_soma" in self.sim_info and self.sim_info["record_all_soma"]:
                 self.add_volt_recording_soma()
 
-            if "record_soma" in self.sim_info:
-                record_soma_cell_id = np.array(self.sim_info["record_soma"], dtype=int)
-                self.add_volt_recording_soma(cell_id=record_soma_cell_id)
-
             if "record_all_compartments" in self.sim_info:
                 record_comp_cell_id = np.array(self.sim_info["record_all_compartments"], dtype=int)
                 self.add_volt_recording_all(cell_id=record_comp_cell_id)
+                
+            elif "record_soma" in self.sim_info:
+                record_soma_cell_id = np.array(self.sim_info["record_soma"], dtype=int)
+                self.add_volt_recording_soma(cell_id=record_soma_cell_id)
 
             if "record_all_synapses" in self.sim_info:
                 record_syn_cell_id = np.array(self.sim_info["record_all_synapses"], dtype=int)
@@ -1466,7 +1466,7 @@ class SnuddaSimulate(object):
 
     ############################################################################
 
-    def add_volt_recording_all(self, cell_id=None, centre_only_flag=True, section_x=None):
+    def add_volt_recording_all(self, cell_id=None, centre_only_flag=False, section_x=None):
 
         # centre_only_flag has priority over section_x parameter
 
