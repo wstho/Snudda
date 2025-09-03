@@ -370,14 +370,14 @@ class BendMorphologies:
 
         # original_rotation = None
         # print(f'Original Rotation: {original_rotation}')
-        md = MorphologyData(swc_file=swc_file)
-        md.place(rotation=None, position=original_position)
-        np.savetxt("unbent.csv", md.geometry[:,:3], 
-                      delimiter = ",")
+        # md = MorphologyData(swc_file=swc_file)
+        # md.place(rotation=None, position=original_position)
+        # np.savetxt("unbent.csv", md.geometry[:,:3], 
+        #               delimiter = ",")
         md = MorphologyData(swc_file=swc_file)
         md.place(rotation=original_rotation, position=original_position)
-        np.savetxt("rot.csv", md.geometry[:,:3], 
-                      delimiter = ",")
+        # np.savetxt("rot.csv", md.geometry[:,:3], 
+        #               delimiter = ",")
         
         
         rot_rep, morphology_changed = self.bend_morphology(md,

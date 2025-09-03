@@ -226,6 +226,8 @@ class SnuddaSimulate(object):
 
         self.net_con_list = []  # Avoid premature garbage collection -- todo: THIS WILL BE REMOVED
         self.synapse_list = []  # todo: THIS WILL BE REMOVED, replaced by synapse_dict
+        self.time_vecs = []
+        self.weight_vecs = []
         self.synapse_dict = dict()
         self.i_stim = []
         self.v_clamp_list = []
@@ -1116,9 +1118,18 @@ class SnuddaSimulate(object):
             self.synapse_dict[cell_id_source, cell_id_dest] = []
 
         nc = self.pc.gid_connect(cell_id_source, syn)
-        nc.weight[0] = conductance
+        nc.weight[0] = 0 #conductance
         nc.delay = synapse_delay
         nc.threshold = self.spike_threshold
+        conductance = 0.001
+        
+        time_vec = h.Vector([0, 95, 100, 400])
+        weight_vec = h.Vector([0, 0, conductance, conductance])
+        weight_vec.play(nc._ref_weight[0], time_vec)
+        
+        self.time_vecs.append(time_vec)
+        self.weight_vecs.append(weight_vec)
+        print(f"t=0: weight = {nc.weight[0]}")
 
         # This prevents garbage collection of syn and nc
         self.synapse_dict[cell_id_source, cell_id_dest].append((syn, nc, synapse_type_id, section_id))
@@ -1684,7 +1695,9 @@ class SnuddaSimulate(object):
 
         end_time = timeit.default_timer()
         self.write_log(f"Simulation run time: {end_time - start_time:.1f} s", force_print=True)
-
+        # After simulation:
+        for nc in self.net_con_list:
+            print(f"t=final: weight = {nc.weight[0]}")  # Should be conductance
     ############################################################################
     # export_to_core_neuron contributed by Zhixin, email: 2001210624@pku.edu.cn
 

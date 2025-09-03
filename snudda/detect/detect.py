@@ -747,8 +747,7 @@ class SnuddaDetect(object):
 
             targets = neuron.axon_targets
             rng = np.random.default_rng(seed)
-            
-            # print(len([v['neurons'] for k, v in self.hyper_voxels.items() if v['neurons'] ]))
+
             
             # self.write_log(f"{len([v['neurons'] for k, v in self.hyper_voxels.items() if v['neurons'] ])}")
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
