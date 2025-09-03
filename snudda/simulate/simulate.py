@@ -1121,9 +1121,8 @@ class SnuddaSimulate(object):
         nc.weight[0] = 0 #conductance
         nc.delay = synapse_delay
         nc.threshold = self.spike_threshold
-        conductance = 0.001
-        
-        time_vec = h.Vector([0, 95, 100, 400])
+
+        time_vec = h.Vector([0, 1999, 2000, 4000])
         weight_vec = h.Vector([0, 0, conductance, conductance])
         weight_vec.play(nc._ref_weight[0], time_vec)
         
