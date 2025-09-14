@@ -281,7 +281,7 @@ class SnuddaDetect(object):
 
         # Read positions
         self.read_neuron_positions(position_file)
-        self.axon_targets = np.random.randint(0, len(self.neurons), size = (len(self.neurons),25))
+        self.axon_targets = np.random.randint(0, len(self.neurons), size = (len(self.neurons),23))
 
 
         self.projection_detection = None  # Helper class for handling projections between structures
@@ -752,10 +752,9 @@ class SnuddaDetect(object):
             # self.write_log(f"{len([v['neurons'] for k, v in self.hyper_voxels.items() if v['neurons'] ])}")
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
 
-            # self.write_log(f"number of hyper_voxels {len(hyper_voxel_id)}")
+            # hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(3, 0.5)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
+            hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(round(np.random.normal(5, 0.5)), len(hyper_voxel_id)), replace = False)
 
-            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(3, 0.5)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
-            
             return hyper_voxel_id
 
         if axon_loc is not None:
@@ -1756,32 +1755,18 @@ class SnuddaDetect(object):
     
     
     def get_hyper_voxel_axon_points_new_sparse(self, targets):
-
-        """
-        Helper function to give points inside axon bounding box, that are inside hyper voxel
-
-        Args:
-            neuron_position (float,float,float): coordinates of neuron
-            rotation: rotation matrix
-            axon_density_bounds_xyz: boundary box for axon
-            num_points: number of points to place
-        """
   
         vox_idx = np.column_stack(np.where(np.isin(self.dend_voxels[:,:,:,0], targets)))
-
         vox_idx_4d = np.column_stack([vox_idx, np.zeros((vox_idx.shape[0], 1), dtype=vox_idx.dtype)])
         target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
         
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
-
         inside_idx = np.where(np.sum(np.bitwise_and(0 <= vox_idx, vox_idx < self.hyper_voxel_size), axis=1) == 3)[0]
 
         n_syn_cap = 100*len(set(target_ids))            
-        # if len(inside_idx)> n_syn_cap:
-        #     inside_idx = np.random.choice(inside_idx, size = n_syn_cap, replace = False)
-            
         rand_idx = np.random.permutation(len(inside_idx))[:n_syn_cap]
         inside_idx = inside_idx[rand_idx]
+        
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     ############################################################################

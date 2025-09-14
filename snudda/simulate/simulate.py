@@ -1118,17 +1118,17 @@ class SnuddaSimulate(object):
             self.synapse_dict[cell_id_source, cell_id_dest] = []
 
         nc = self.pc.gid_connect(cell_id_source, syn)
-        nc.weight[0] = 0 #conductance
+        nc.weight[0] = conductance
         nc.delay = synapse_delay
         nc.threshold = self.spike_threshold
 
-        time_vec = h.Vector([0, 1999, 2000, 4000])
-        weight_vec = h.Vector([0, 0, conductance, conductance])
-        weight_vec.play(nc._ref_weight[0], time_vec)
+        # time_vec = h.Vector([0, 1999, 2000, 4000])
+        # weight_vec = h.Vector([0, 0, conductance, conductance])
+        # weight_vec.play(nc._ref_weight[0], time_vec)
         
-        self.time_vecs.append(time_vec)
-        self.weight_vecs.append(weight_vec)
-        print(f"t=0: weight = {nc.weight[0]}")
+        # self.time_vecs.append(time_vec)
+        # self.weight_vecs.append(weight_vec)
+        # print(f"t=0: weight = {nc.weight[0]}")
 
         # This prevents garbage collection of syn and nc
         self.synapse_dict[cell_id_source, cell_id_dest].append((syn, nc, synapse_type_id, section_id))
@@ -1352,7 +1352,7 @@ class SnuddaSimulate(object):
                 rest_volt = [x for x in self.neurons[neuron_id].parameters
                              if "param_name" in x and x["param_name"] == "v_init"][0]["value"] * 1e-3
 
-            self.write_log(f"Neuron {self.neurons[neuron_id].name} ({neuron_id}) resting voltage = {rest_volt * 1e3}")
+            self.write_log(f"Neuron {self.neurons[neuron_id].name} ({neuron_id}) init voltage = {rest_volt * 1e3}")
 
             soma = [x for x in self.neurons[neuron_id].icell.soma]
             axon = [x for x in self.neurons[neuron_id].icell.axon]
@@ -1695,8 +1695,8 @@ class SnuddaSimulate(object):
         end_time = timeit.default_timer()
         self.write_log(f"Simulation run time: {end_time - start_time:.1f} s", force_print=True)
         # After simulation:
-        for nc in self.net_con_list:
-            print(f"t=final: weight = {nc.weight[0]}")  # Should be conductance
+        # for nc in self.net_con_list:
+        #     print(f"t=final: weight = {nc.weight[0]}")  
     ############################################################################
     # export_to_core_neuron contributed by Zhixin, email: 2001210624@pku.edu.cn
 
@@ -1944,19 +1944,20 @@ class SnuddaSimulate(object):
              end_time: End time of current injection
              amplitude: Amplitude of current injection
         """
-
-        if neuron_id not in self.neuron_id:
-            # The neuron ID does not exist on this worker
-            return
-
         assert end_time > start_time, "add_current_injection: End time must be after start time"
 
-        cur_stim = self.sim.neuron.h.IClamp(0.5, sec=self.neurons[neuron_id].icell.soma[0])
-        cur_stim.delay = start_time * 1e3
-        cur_stim.dur = (end_time - start_time) * 1e3
-        cur_stim.amp = amplitude * 1e9  # What is units of amp?? nA??
-
-        self.i_stim.append(cur_stim)
+        if isinstance(neuron_id, int):
+            neuron_id = [neuron_id]
+            
+        for n_id in neuron_id:
+            if n_id not in self.neuron_id:
+                # The neuron ID does not exist on this worker
+                return
+            cur_stim = self.sim.neuron.h.IClamp(0.5, sec=self.neurons[n_id].icell.soma[0])
+            cur_stim.delay = start_time * 1e3
+            cur_stim.dur = (end_time - start_time) * 1e3
+            cur_stim.amp = amplitude * 1e9  # What is units of amp?? nA??
+            self.i_stim.append(cur_stim)
 
     ############################################################################
 
