@@ -258,7 +258,7 @@ class SnuddaDetect(object):
         # This is an upper limit how many axon/dend we allow in each voxel max
         # 10 overflowed
         self.max_axon = 50
-        self.max_dend = 20
+        self.max_dend = 25
         
         self.max_neurons = 10000
         self.max_synapses = 2000000
@@ -283,7 +283,7 @@ class SnuddaDetect(object):
         self.read_neuron_positions(position_file)
         self.axon_targets = np.random.randint(0, len(self.neurons), size = (len(self.neurons),23))
 
-
+        self.run_projection = False
         self.projection_detection = None  # Helper class for handling projections between structures
 
     def detect(self, restart_detection_flag=True, rc=None):
@@ -337,6 +337,7 @@ class SnuddaDetect(object):
             self.distribute_neurons_parallel(d_view=d_view)
 
             # We also need to start the projection code
+            
             self.projection_detection = ProjectionDetection(snudda_detect=self, role=self.role, rc=self.rc)
             self.projection_detection.find_neurons_projections_in_hyper_voxels()
 
@@ -752,8 +753,8 @@ class SnuddaDetect(object):
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
 
             # hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(3, 0.5)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
-            hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(10, len(hyper_voxel_id)), replace = False)
-
+            hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(20, len(hyper_voxel_id)), replace = False)
+            # self.write_log(f"length hyper_voxel_id: {len(hyper_voxel_id)}")
             return hyper_voxel_id
 
         if axon_loc is not None:
@@ -1236,6 +1237,9 @@ class SnuddaDetect(object):
                                          self.num_bins[2],
                                          self.max_dend),
                                         dtype=np.int32)
+            
+            
+            
             self.dend_voxel_ctr = np.zeros(self.num_bins, dtype=np.int32)
 
             # Which segment ID does the point belong to, and what segX
@@ -1754,21 +1758,18 @@ class SnuddaDetect(object):
     
     
     def get_hyper_voxel_axon_points_new_sparse(self, targets):
-  
-        vox_idx = np.column_stack(np.where(np.isin(self.dend_voxels[:,:,:,0], targets)))
-        # vox_idx_4d = np.column_stack([vox_idx, np.zeros((vox_idx.shape[0], 1), dtype=vox_idx.dtype)])
-        # target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
+        targets = targets[targets != 0]
+        vox_idx = np.column_stack(np.where(np.isin(self.dend_voxels[:,:,:,:], targets)))[:, :3]
+        vox_idx_4d = np.column_stack([vox_idx, np.zeros((vox_idx.shape[0], 1), dtype=vox_idx.dtype)])
+        target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
         
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         inside_idx = np.where(np.sum(np.bitwise_and(0 <= vox_idx, vox_idx < self.hyper_voxel_size), axis=1) == 3)[0]
 
-        # n_syn_cap = 500*len(set(target_ids))      
+        n_syn_cap = 1000 # 500*len(set(target_ids))      
         
-        # print(f'length target_ids: {len(set(target_ids))}')   
-        # print(f'length vox_idx: {len(vox_idx)}')
-        
-        # rand_idx = np.random.permutation(len(inside_idx))[:]
-        # inside_idx = inside_idx[rand_idx]
+        rand_idx = np.random.permutation(len(inside_idx))[:]
+        inside_idx = inside_idx[rand_idx]
         
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
