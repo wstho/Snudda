@@ -1763,13 +1763,13 @@ class SnuddaDetect(object):
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         inside_idx = np.where(np.sum(np.bitwise_and(0 <= vox_idx, vox_idx < self.hyper_voxel_size), axis=1) == 3)[0]
 
-        n_syn_cap = 500*len(set(target_ids))      
+        # n_syn_cap = 500*len(set(target_ids))      
         
-        print(f'length target_ids: {len(set(target_ids))}')   
-        print(f'length vox_idx: {len(vox_idx)}')
+        # print(f'length target_ids: {len(set(target_ids))}')   
+        # print(f'length vox_idx: {len(vox_idx)}')
         
-        rand_idx = np.random.permutation(len(inside_idx))[:n_syn_cap]
-        inside_idx = inside_idx[rand_idx]
+        # rand_idx = np.random.permutation(len(inside_idx))[:]
+        # inside_idx = inside_idx[rand_idx]
         
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
