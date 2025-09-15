@@ -748,12 +748,11 @@ class SnuddaDetect(object):
             targets = neuron.axon_targets
             rng = np.random.default_rng(seed)
 
-            
             # self.write_log(f"{len([v['neurons'] for k, v in self.hyper_voxels.items() if v['neurons'] ])}")
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
 
             # hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(3, 0.5)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
-            hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(round(np.random.normal(6, 0.5)), len(hyper_voxel_id)), replace = False)
+            # hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(round(np.random.normal(6, 0.5)), len(hyper_voxel_id)), replace = False)
 
             return hyper_voxel_id
 
@@ -1757,8 +1756,8 @@ class SnuddaDetect(object):
     def get_hyper_voxel_axon_points_new_sparse(self, targets):
   
         vox_idx = np.column_stack(np.where(np.isin(self.dend_voxels[:,:,:,0], targets)))
-        vox_idx_4d = np.column_stack([vox_idx, np.zeros((vox_idx.shape[0], 1), dtype=vox_idx.dtype)])
-        target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
+        # vox_idx_4d = np.column_stack([vox_idx, np.zeros((vox_idx.shape[0], 1), dtype=vox_idx.dtype)])
+        # target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
         
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         inside_idx = np.where(np.sum(np.bitwise_and(0 <= vox_idx, vox_idx < self.hyper_voxel_size), axis=1) == 3)[0]
@@ -1916,7 +1915,6 @@ class SnuddaDetect(object):
         """
         
         (xyz_inside, voxIdx) = self.get_hyper_voxel_axon_points_new_sparse(targets)
-        
         axon_dist = np.sqrt(np.sum((xyz_inside) ** 2, axis=1))
 
         return voxIdx, axon_dist
