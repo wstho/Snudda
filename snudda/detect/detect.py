@@ -1766,7 +1766,7 @@ class SnuddaDetect(object):
         vox_idx = np.column_stack(np.where(mask_3d))
         
         soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], :]
-        distance_mask = np.logical_and(soma_dists > -1, soma_dists <= 100).any(axis=1)
+        distance_mask = np.logical_and(soma_dists > -1, soma_dists <= 150).any(axis=1)
         vox_idx = vox_idx[distance_mask]
         
         # vox_idx = vox_idx[np.where(soma_dists < 100)]
