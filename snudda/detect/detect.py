@@ -258,7 +258,7 @@ class SnuddaDetect(object):
         # This is an upper limit how many axon/dend we allow in each voxel max
         # 10 overflowed
         self.max_axon = 50
-        self.max_dend = 25
+        self.max_dend = 6
         
         self.max_neurons = 10000
         self.max_synapses = 2000000
