@@ -753,7 +753,7 @@ class SnuddaDetect(object):
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
 
             # hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(3, 0.5)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
-            hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(20, len(hyper_voxel_id)), replace = False)
+            hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(10, len(hyper_voxel_id)), replace = False)
             # self.write_log(f"length hyper_voxel_id: {len(hyper_voxel_id)}")
             return hyper_voxel_id
 
@@ -1758,20 +1758,31 @@ class SnuddaDetect(object):
     
     
     def get_hyper_voxel_axon_points_new_sparse(self, targets):
+        
         targets = targets[targets != 0]
-        vox_idx = np.column_stack(np.where(np.isin(self.dend_voxels[:,:,:,:], targets)))[:, :3]
-        vox_idx_4d = np.column_stack([vox_idx, np.zeros((vox_idx.shape[0], 1), dtype=vox_idx.dtype)])
-        target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
+        targets_set = set(targets)
+        mask_4d = np.zeros(self.dend_voxels.shape, dtype=bool)
+        for target in targets_set:
+            mask_4d |= (self.dend_voxels == target)
+            
+        vox_idx = np.column_stack(np.where(mask_4d))[:, :3]
         
+        soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], 0]
+        distance_mask = soma_dists < 100
+        vox_idx = vox_idx[distance_mask]
+        
+        # vox_idx = vox_idx[np.where(soma_dists < 100)]
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
-        inside_idx = np.where(np.sum(np.bitwise_and(0 <= vox_idx, vox_idx < self.hyper_voxel_size), axis=1) == 3)[0]
+        # inside_idx = np.where(np.sum(np.bitwise_and(0 <= vox_idx, vox_idx < self.hyper_voxel_size), axis=1) == 3)[0]
+        # target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
+        # n_syn_cap = 1000 # 500*len(set(target_ids))      
+        
+        # rand_idx = np.random.permutation(len(inside_idx))[:]
+        # inside_idx = inside_idx[rand_idx]
+        
+        # return xyz[inside_idx, :], vox_idx[inside_idx, :]
+        return xyz, vox_idx
 
-        n_syn_cap = 1000 # 500*len(set(target_ids))      
-        
-        rand_idx = np.random.permutation(len(inside_idx))[:]
-        inside_idx = inside_idx[rand_idx]
-        
-        return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     ############################################################################
 
