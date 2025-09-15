@@ -1260,6 +1260,7 @@ class SnuddaDetect(object):
                                             self.num_bins[2],
                                             self.max_dend),
                                            dtype=np.int16)
+            self.dend_soma_dist[:,:,:,:] = -1
 
         else:
             # Already allocated, just clear it
@@ -1267,7 +1268,7 @@ class SnuddaDetect(object):
             self.dend_voxel_ctr[:] = 0
             self.dend_sec_id[:] = 0
             self.dend_sec_x[:] = 0
-            self.dend_soma_dist[:] = 0
+            self.dend_soma_dist[:] = -1
 
         self.voxel_overflow_counter = 0
 
@@ -1760,15 +1761,12 @@ class SnuddaDetect(object):
     def get_hyper_voxel_axon_points_new_sparse(self, targets):
         
         targets = targets[targets != 0]
-        targets_set = set(targets)
-        mask_4d = np.zeros(self.dend_voxels.shape, dtype=bool)
-        for target in targets_set:
-            mask_4d |= (self.dend_voxels == target)
             
-        vox_idx = np.column_stack(np.where(mask_4d))[:, :3]
+        mask_3d = np.any(np.isin(self.dend_voxels, targets), axis=3)
+        vox_idx = np.column_stack(np.where(mask_3d))
         
-        soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], 0]
-        distance_mask = soma_dists < 100
+        soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], :]
+        distance_mask = np.logical_and(soma_dists > -1, soma_dists <= 100).any(axis=1)
         vox_idx = vox_idx[distance_mask]
         
         # vox_idx = vox_idx[np.where(soma_dists < 100)]
