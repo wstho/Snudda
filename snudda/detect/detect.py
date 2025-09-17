@@ -752,7 +752,7 @@ class SnuddaDetect(object):
             # self.write_log(f"{len([v['neurons'] for k, v in self.hyper_voxels.items() if v['neurons'] ])}")
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
 
-            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(8, len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =5, replace = False)]))
+            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(8, len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size = 5, replace = False)]))
             # hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(10, len(hyper_voxel_id)), replace = False)
             return hyper_voxel_id
 
@@ -1767,9 +1767,8 @@ class SnuddaDetect(object):
         soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], :]
         distance_mask = np.logical_and(soma_dists > -1, soma_dists <= 150).any(axis=1)
         vox_idx = vox_idx[distance_mask]
-        
-        # vox_idx = vox_idx[np.where(soma_dists < 100)]
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
+        
         # inside_idx = np.where(np.sum(np.bitwise_and(0 <= vox_idx, vox_idx < self.hyper_voxel_size), axis=1) == 3)[0]
         # target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
         # n_syn_cap = 1000 # 500*len(set(target_ids))      

@@ -2098,7 +2098,8 @@ class SnuddaPrune(object):
                 # p_keep = np.divide(2 * soft_max, (1 + np.exp(-(n_keep - soft_max) / 5)) * n_keep)
                 # p_keep = np.where(n_keep <= soft_max, 1.0, np.exp(-(n_keep - soft_max) / 3))
                 
-                p_keep = 1 -1.0 / (1.0 + np.exp(-1 * (n_keep - soft_max)))
+                # p_keep = 1 -1.0 / (1.0 + np.exp(-1 * (n_keep - soft_max)))
+                p_keep = 1 - (n_keep - soft_max)/n_keep
 
                 
                 keep_row_flag[next_read_pos:read_end_idx] = \
@@ -2110,7 +2111,7 @@ class SnuddaPrune(object):
             # If too few synapses, remove all synapses
             if mu2 is not None:
                 # Markram et al, Cell 2015
-                p_mu = 1.0 / (1.0 + np.exp(-8.0 / mu2 * (n_keep - mu2)))
+                p_mu = 1.0 / (1.0 + np.exp(-10.0 / mu2 * (n_keep - mu2)))
 
                 if p_mu < random_pool[-2]:
                     # Too few synapses, remove all -- need to update keepRowFlag
