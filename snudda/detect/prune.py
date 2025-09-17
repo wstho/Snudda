@@ -2096,7 +2096,10 @@ class SnuddaPrune(object):
             if soft_max is not None and n_keep > soft_max:
                 soft_max = float(soft_max)
                 # p_keep = np.divide(2 * soft_max, (1 + np.exp(-(n_keep - soft_max) / 5)) * n_keep)
-                p_keep = np.where(n_keep <= soft_max, 1.0, np.exp(-(n_keep - soft_max) / 3))
+                # p_keep = np.where(n_keep <= soft_max, 1.0, np.exp(-(n_keep - soft_max) / 3))
+                
+                p_keep = 1 -1.0 / (1.0 + np.exp(-1 * (n_keep - soft_max)))
+
                 
                 keep_row_flag[next_read_pos:read_end_idx] = \
                     np.logical_and(p_keep > random_pool[2 * n_pair_synapses:3 * n_pair_synapses],

@@ -68,11 +68,11 @@ class SnuddaAnalyse:
         base_dir = os.path.dirname(hdf5_file)
         assert os.path.isdir(base_dir), \
             f"Internal inconsistency. Not a directory {base_dir}, derived from hdf5_file{hdf5_file}"
-        self.fig_dir = os.path.join(base_dir, "figures")
+        # self.fig_dir = os.path.join(base_dir, "figures")
 
-        if not os.path.exists(self.fig_dir):
-            print(f"Creating figures directory {self.fig_dir}")
-            os.makedirs(self.fig_dir)
+        # if not os.path.exists(self.fig_dir):
+        #     print(f"Creating figures directory {self.fig_dir}")
+        #     os.makedirs(self.fig_dir)
 
         # First load all data but synapses
         self.network_load = SnuddaLoad(hdf5_file, load_synapses=False)

@@ -258,7 +258,7 @@ class SnuddaDetect(object):
         # This is an upper limit how many axon/dend we allow in each voxel max
         # 10 overflowed
         self.max_axon = 50
-        self.max_dend = 6
+        self.max_dend = 20
         
         self.max_neurons = 10000
         self.max_synapses = 2000000
@@ -752,9 +752,8 @@ class SnuddaDetect(object):
             # self.write_log(f"{len([v['neurons'] for k, v in self.hyper_voxels.items() if v['neurons'] ])}")
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
 
-            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(5, 0.5)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
+            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(8, 0.1)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
             # hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(10, len(hyper_voxel_id)), replace = False)
-            # self.write_log(f"length hyper_voxel_id: {len(hyper_voxel_id)}")
             return hyper_voxel_id
 
         if axon_loc is not None:
@@ -2688,10 +2687,13 @@ class SnuddaDetect(object):
 
                     self.hyper_voxels[hid]["neurons"][neuron_id] = hv[hid]["neurons"][neuron_id]
                     
-                    
+        self.write_log("Pushing hypervoxels.")
+
         d_view.push({"sd.hyper_voxels": self.hyper_voxels}, block=True)
         self.distribute_neurons_axon(neuron_idx=[], min_coord=min_coord, max_coord=max_coord, distribution_seeds=[])
-
+                    
+        self.write_log("Distributing axons.")
+        
         cmd_str = ("sd.distribute_neurons_axon(neuron_idx=neuron_idx, distribution_seeds=distribution_seeds, "
                    "min_coord=min_coord, max_coord=max_coord)")
         d_view.execute(cmd_str, block=True)
