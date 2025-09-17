@@ -281,7 +281,7 @@ class SnuddaDetect(object):
 
         # Read positions
         self.read_neuron_positions(position_file)
-        self.axon_targets = np.random.randint(0, len(self.neurons), size = (len(self.neurons),20))
+        self.axon_targets = np.random.randint(0, len(self.neurons), size = (len(self.neurons),23))
 
         self.run_projection = False
         self.projection_detection = None  # Helper class for handling projections between structures
@@ -752,8 +752,8 @@ class SnuddaDetect(object):
             # self.write_log(f"{len([v['neurons'] for k, v in self.hyper_voxels.items() if v['neurons'] ])}")
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
 
-            # hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(3, 0.5)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
-            hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(10, len(hyper_voxel_id)), replace = False)
+            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(round(np.random.normal(5, 0.5)), len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size =2, replace = False)]))
+            # hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(10, len(hyper_voxel_id)), replace = False)
             # self.write_log(f"length hyper_voxel_id: {len(hyper_voxel_id)}")
             return hyper_voxel_id
 
