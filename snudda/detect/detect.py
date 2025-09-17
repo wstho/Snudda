@@ -281,7 +281,7 @@ class SnuddaDetect(object):
 
         # Read positions
         self.read_neuron_positions(position_file)
-        self.axon_targets = np.random.randint(0, len(self.neurons), size = (len(self.neurons),15))
+        self.axon_targets = np.random.randint(0, len(self.neurons), size = (len(self.neurons),20))
 
         self.run_projection = False
         self.projection_detection = None  # Helper class for handling projections between structures
