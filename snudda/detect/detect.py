@@ -752,7 +752,7 @@ class SnuddaDetect(object):
             # self.write_log(f"{len([v['neurons'] for k, v in self.hyper_voxels.items() if v['neurons'] ])}")
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
 
-            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(8, len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size = 5, replace = False)]))
+            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(8, len(hyper_voxel_id)), replace = False), rng.choice(self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0], size = 4, replace = False)]))
             # hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(10, len(hyper_voxel_id)), replace = False)
             return hyper_voxel_id
 
