@@ -2111,7 +2111,7 @@ class SnuddaPrune(object):
             # If too few synapses, remove all synapses
             if mu2 is not None:
                 # Markram et al, Cell 2015
-                p_mu = 1.0 / (1.0 + np.exp(-10.0 / mu2 * (n_keep - mu2)))
+                p_mu = 1.0 / (1.0 + np.exp(-12.0 / mu2 * (n_keep - mu2)))
 
                 if p_mu < random_pool[-2]:
                     # Too few synapses, remove all -- need to update keepRowFlag
