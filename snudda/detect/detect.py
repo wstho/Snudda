@@ -740,14 +740,15 @@ class SnuddaDetect(object):
         elif neuron.axon_density_type == "new_sparse":
 
             rng = np.random.default_rng(seed)
-            hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in neuron.axon_targets if t in v['neurons'] and 'soma' in v['neurons'][t]})
+            hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in neuron.axon_targets if t in v['neurons'] and 'dend' in v['neurons'][t]})
             # dend_field = self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0]
             # hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(5, len(hyper_voxel_id)), replace = False), rng.choice(dend_field, size = min(5, len(dend_field)), replace = False)]))
             # hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() if v['neurons']})
             # hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() if any('soma' in x for x in v['neurons'].values())})
             # hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(5, len(hyper_voxel_id)), replace = False)
             
-            # print(f"hyper voxels: {hyper_voxel_id}")
+            print(f"hyper voxels: {hyper_voxel_id}")
+            print(f"# hyper voxels: {len(hyper_voxel_id)}")
             return hyper_voxel_id
 
         if axon_loc is not None:
@@ -1744,10 +1745,11 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self, targets,prox_dist = 100): #, prox_dist = 100):
+    def get_hyper_voxel_axon_points_new_sparse(self, targets, prox_dist = 100): #, prox_dist = 100):
         
         # targets = targets[targets != 0]
         # print(targets)
+        n_vox_cap = 100
         mask_3d = np.any(np.isin(self.dend_voxels, targets), axis=3)
         vox_idx = np.column_stack(np.where(mask_3d))
         # print(len(vox_idx))
@@ -1757,10 +1759,10 @@ class SnuddaDetect(object):
         # print(len(vox_idx))
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         
-        # rand_idx = np.random.permutation(len(xyz))[:n_vox_cap]
+        rand_idx = np.random.permutation(len(xyz))[:n_vox_cap]
         
-        # return xyz[rand_idx, :], vox_idx[rand_idx, :]
-        return xyz, vox_idx
+        return xyz[rand_idx, :], vox_idx[rand_idx, :]
+        # return xyz, vox_idx
 
     
     
