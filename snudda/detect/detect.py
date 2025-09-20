@@ -281,7 +281,7 @@ class SnuddaDetect(object):
 
         # Read positions
         self.read_neuron_positions(position_file)
-        self.axon_targets = np.random.randint(1, len(self.neurons), size = (len(self.neurons),10)) #23
+        self.axon_targets = np.random.randint(1, len(self.neurons), size = (len(self.neurons),20)) #23
 
         self.run_projection = False
         self.projection_detection = None  # Helper class for handling projections between structures
@@ -741,8 +741,8 @@ class SnuddaDetect(object):
 
             rng = np.random.default_rng(seed)
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() for t in neuron.axon_targets if t in v['neurons'] and 'soma' in v['neurons'][t]})
-            # dend_field = self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0]
-            # hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(5, len(hyper_voxel_id)), replace = False), rng.choice(dend_field, size = min(5, len(dend_field)), replace = False)]))
+            dend_field = self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0]
+            hyper_voxel_id = np.unique(np.concatenate([rng.choice(hyper_voxel_id, size = min(5, len(hyper_voxel_id)), replace = False), rng.choice(dend_field, size = min(5, len(dend_field)), replace = False)]))
             # hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() if v['neurons']})
             # hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() if any('soma' in x for x in v['neurons'].values())})
             # hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(5, len(hyper_voxel_id)), replace = False)
@@ -1745,7 +1745,7 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self, targets, prox_dist = 100): #, prox_dist = 100):
+    def get_hyper_voxel_axon_points_new_sparse(self, targets): #, prox_dist = 100):
         
         # targets = targets[targets != 0]
         # print(targets)
