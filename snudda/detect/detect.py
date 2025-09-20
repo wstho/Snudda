@@ -1744,7 +1744,7 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self, targets, n_vox_cap = 100):
+    def get_hyper_voxel_axon_points_new_sparse(self, targets, n_vox_cap = 1000, prox_dist = 150):
         
         # targets = targets[targets != 0]
             
@@ -1753,7 +1753,7 @@ class SnuddaDetect(object):
         vox_idx = np.column_stack(np.where(mask_3d))
 
         soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], :]
-        distance_mask = np.logical_and(soma_dists > -1, soma_dists <= 150).any(axis=1)
+        distance_mask = np.logical_and(soma_dists > -1, soma_dists <= prox_dist).any(axis=1)
         vox_idx = vox_idx[distance_mask]
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         
