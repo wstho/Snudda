@@ -1935,6 +1935,21 @@ class SnuddaPrune(object):
         return num_syn, num_syn_kept
 
     ############################################################################
+    
+    def hard_cutoff(self, synapses, threshold):
+        cutoff = np.where(np.bincount(synapses[:, 1])> threshold)[0]
+        
+        to_delete = []
+        dests = synapses[:, 1]
+        for c_id in cutoff:
+            c_syn = np.flatnonzero(dests == c_id)
+            del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
+            to_delete.append(del_idx)
+            
+        if to_delete:
+            to_delete = np.concatenate(to_delete)
+            synapses = np.delete(synapses, to_delete, axis=0)
+        return synapses
 
     def prune_synapses_helper(self, synapses, output_file, merge_data_type):
 
@@ -1952,11 +1967,14 @@ class SnuddaPrune(object):
 
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
 
+
+        synapses = self.hard_cutoff(synapses, threshold = 600)
+
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
         next_read_pos = 0
         read_end_of_range = synapses.shape[0]
-
+        
         # Random seeds for reproducability
         neuron_seeds = self.get_neuron_random_seeds()
         previous_post_synaptic_neuron_id = None

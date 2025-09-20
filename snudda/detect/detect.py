@@ -1790,7 +1790,7 @@ class SnuddaDetect(object):
         # else: 
         #     return xyz, vox_idx
         
-        rand_idx = np.random.choice(len(vox_idx), n_syn_cap, replace=False)
+        rand_idx = np.random.choice(len(vox_idx), min(len(vox_idx), n_syn_cap), replace=False)
         
         return xyz[rand_idx], vox_idx[rand_idx]
     
