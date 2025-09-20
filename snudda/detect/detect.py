@@ -747,7 +747,7 @@ class SnuddaDetect(object):
             # hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() if any('soma' in x for x in v['neurons'].values())})
             # hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(5, len(hyper_voxel_id)), replace = False)
             
-            print(f"hyper voxels: {hyper_voxel_id}")
+            # print(f"hyper voxels: {hyper_voxel_id}")
             return hyper_voxel_id
 
         if axon_loc is not None:
@@ -1744,16 +1744,17 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self, targets): #, prox_dist = 100):
+    def get_hyper_voxel_axon_points_new_sparse(self, targets,prox_dist = 100): #, prox_dist = 100):
         
         # targets = targets[targets != 0]
-            
+        # print(targets)
         mask_3d = np.any(np.isin(self.dend_voxels, targets), axis=3)
         vox_idx = np.column_stack(np.where(mask_3d))
-
-        # soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], :]
-        # distance_mask = np.logical_and(soma_dists > -1, soma_dists <= prox_dist).any(axis=1)
-        # vox_idx = vox_idx[distance_mask]
+        # print(len(vox_idx))
+        soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], :]
+        distance_mask = np.logical_and(soma_dists > -1, soma_dists <= prox_dist).any(axis=1)
+        vox_idx = vox_idx[distance_mask]
+        # print(len(vox_idx))
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         
         # rand_idx = np.random.permutation(len(xyz))[:n_vox_cap]
