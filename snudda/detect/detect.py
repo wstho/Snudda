@@ -1775,20 +1775,26 @@ class SnuddaDetect(object):
         # # n_syn_cap = 1000 # 500*len(set(target_ids))      
         
         # ####alt method
-        n_syn_cap = 200
+        n_syn_cap = 300
 
         # distance_mask = np.logical_and(self.dend_soma_dist > -1, self.dend_soma_dist <= 120).any(axis=3)
         # vox_idx = np.column_stack(np.where(distance_mask != 0))
         
-        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 120)).any(axis=3)
+        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 100)).any(axis=3)
         vox_idx = np.column_stack(np.where(mask_3d))
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         
-        if len(xyz) > n_syn_cap: 
-            rand_idx = np.random.randint(0, len(xyz) - n_syn_cap)
-            return xyz[rand_idx: rand_idx + n_syn_cap, :], vox_idx[rand_idx: rand_idx + n_syn_cap, :]
-        else: 
-            return xyz, vox_idx
+        # if len(xyz) > n_syn_cap: 
+        #     rand_idx = np.random.randint(0, len(xyz) - n_syn_cap)
+        #     return xyz[rand_idx: rand_idx + n_syn_cap, :], vox_idx[rand_idx: rand_idx + n_syn_cap, :]
+        # else: 
+        #     return xyz, vox_idx
+        
+        rand_idx = np.random.choice(len(vox_idx), n_syn_cap, replace=False)
+        
+        return xyz[rand_idx], vox_idx[rand_idx]
+    
+
 
         # # self.write_log(f"num_points = {len(vox_idx)}")
         # # print(f"num_points = {len(vox_idx)}")
