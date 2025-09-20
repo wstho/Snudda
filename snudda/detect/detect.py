@@ -747,7 +747,8 @@ class SnuddaDetect(object):
             # hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() if v['neurons']})
             hyper_voxel_id = list({k for k, v in self.hyper_voxels.items() if any('soma' in x for x in v['neurons'].values())})
             hyper_voxel_id = rng.choice(hyper_voxel_id, size = min(5, len(hyper_voxel_id)), replace = False)
-            print(f"# hyper voxels: {len(hyper_voxel_id)}")
+            
+            print(f"hyper voxels: {hyper_voxel_id}")
             return hyper_voxel_id
 
         if axon_loc is not None:
@@ -1766,28 +1767,24 @@ class SnuddaDetect(object):
         
         
         ####alt method
-        # mask_3d = np.any(np.isin(self.dend_voxels, targets), axis=3)
-        n_syn_cap = 500
-        mask_3d = self.dend_voxels[:,:,:,0] != 0
-        vox_idx = np.column_stack(np.where(mask_3d))
-        # print(f"num_points_pre = {len(vox_idx)}")
-        soma_dists = self.dend_soma_dist[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], :]
-        distance_mask = np.logical_and(soma_dists > -1, soma_dists <= 150).any(axis=1)
-        vox_idx = vox_idx[distance_mask]
+        n_syn_cap = 10
+
+        distance_mask = np.logical_and(self.dend_soma_dist > -1, self.dend_soma_dist <= 150).any(axis=3)
+        vox_idx = np.column_stack(np.where(distance_mask != 0))
+        num_post_synaptic = len(np.unique(self.dend_voxels[vox_idx[:, 0], vox_idx[:, 1], vox_idx[:, 2], :]))
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         
-        # inside_idx = np.where(np.sum(np.bitwise_and(0 <= vox_idx, vox_idx < self.hyper_voxel_size), axis=1) == 3)[0]
-        # target_ids = self.dend_voxels[tuple(np.array(vox_idx_4d).T)]
-        # n_syn_cap = 1000 # 500*len(set(target_ids))      
         
-        rand_idx = np.random.permutation(len(xyz))[:n_syn_cap]
+        rand_idx = np.random.permutation(len(xyz))[:num_post_synaptic*n_syn_cap]
         
-        return xyz[rand_idx, :], vox_idx[rand_idx, :]
-        
+                
         # self.write_log(f"num_points = {len(vox_idx)}")
         # print(f"num_points = {len(vox_idx)}")
-
-        # return xyz, vox_idx
+        # self.write_log(f"num_post_synaptic = {len(num_post_synaptic)}")
+        # print(f"num_post_synaptic = {len(num_post_synaptic)}")
+        
+        
+        return xyz[rand_idx, :], vox_idx[rand_idx, :]
 
     
     ############################################################################
