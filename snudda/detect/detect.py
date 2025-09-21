@@ -1737,24 +1737,38 @@ class SnuddaDetect(object):
     def get_hyper_voxel_axon_points_new_sparse(self): #, prox_dist = 100):
         
        
-        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 100)).any(axis=3)
+        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 120)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
         vox_idx = np.column_stack(np.where(mask_3d))
         
-        put_targets = np.unique(dist[:, :3]) 
+        put_targets = np.unique(dist[:, :20]) 
         put_targets = put_targets[put_targets > 0]
         selected_targets = np.random.choice(put_targets, size = min(5, len(put_targets)), replace = False)
         
-        mask = np.isin(dist, selected_targets).any(axis=1)
+        # for st in selected_targets:
+        #     mask = (dist == st).any(axis=1)
+            
+        m = 20
+        mask = np.zeros(len(dist), dtype=bool)
+
+        for target in selected_targets:
+            target_mask = (dist == target).any(axis=1)
+            indices = np.where(target_mask)[0]
+            if len(indices) > m:
+                indices = np.random.choice(indices, m, replace=False)
+            mask[indices] = True
+             
+        # mask = np.isin(dist, selected_targets).any(axis=1)
         vox_idx = vox_idx[mask]
     
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         return xyz, vox_idx
     
-    
-        
+    #%%
+   
+            
 
-    
+    #%%
     ############################################################################
 
     # somaCentre and rotation of neuron

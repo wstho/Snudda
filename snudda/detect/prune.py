@@ -2183,7 +2183,7 @@ class SnuddaPrune(object):
         if n_keep_tot > 0:
             output_file[h5_syn_mat].resize((write_end_pos, output_file[h5_syn_mat].shape[1]))
             synapses = synapses[keep_row_flag, :]
-            # synapses = self.hard_cutoff(synapses, threshold = 5000)
+            synapses = self.hard_cutoff(synapses, threshold = 500)
             output_file[h5_syn_mat][write_start_pos:write_end_pos] = synapses
 
             # Update counters
