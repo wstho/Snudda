@@ -1743,7 +1743,7 @@ class SnuddaDetect(object):
         
         put_targets = np.unique(dist[:, :20]) 
         put_targets = put_targets[put_targets > 0]
-        selected_targets = np.random.choice(put_targets, size = min(5, len(put_targets)), replace = False)
+        selected_targets = np.random.choice(put_targets, size = min(4, len(put_targets)), replace = False)
         
         m = 25
         mask = np.zeros(len(dist), dtype=bool)
@@ -2612,19 +2612,19 @@ class SnuddaDetect(object):
             #                       any('soma' in str(v['neurons'].get(n_id, '')) 
             #                           for n_id in v['neurons'])})
             
-            soma_keys, soma_weights = zip(*[(k, len(v['neurons'])) for k, v in self.hyper_voxels.items()])
             
             soma_keys, soma_weights = zip(*[
                 (voxel_id, sum(1 for neuron in voxel.get('neurons', {}).values() if 'soma' in neuron))
                 for voxel_id, voxel in self.hyper_voxels.items()
                 if any('soma' in neuron for neuron in voxel.get('neurons', {}).values())
             ])
+        
             
             self.soma_keys = soma_keys
             self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
             
             rng = np.random.default_rng(23)
-            self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 4, replace = False) for _ in range(len(self.neurons))])
+            self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 5, replace = False) for _ in range(len(self.neurons))])
             
             self.distribute_neurons_axon(distribution_seeds=distribution_seeds, min_coord = min_coord, max_coord = max_coord)
             self.count_and_sort_neurons_in_hypervoxels()
@@ -2690,11 +2690,16 @@ class SnuddaDetect(object):
                     self.hyper_voxels[hid]["neurons"][neuron_id] = hv[hid]["neurons"][neuron_id]
                     
 
-        soma_keys, soma_weights = zip(*[(k, len(v['neurons'])) for k, v in self.hyper_voxels.items()])
+        soma_keys, soma_weights = zip(*[
+            (voxel_id, sum(1 for neuron in voxel.get('neurons', {}).values() if 'soma' in neuron))
+            for voxel_id, voxel in self.hyper_voxels.items()
+            if any('soma' in neuron for neuron in voxel.get('neurons', {}).values())
+        ])
+                
         self.soma_keys = soma_keys
         self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
-        rng = np.random.default_rng(23)
-        self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 4, replace = False) for _ in range(len(self.neurons))])
+        rng = np.random.default_rng(42)
+        self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 5, replace = False) for _ in range(len(self.neurons))])
         
         self.write_log("Pushing hypervoxels.")
 
