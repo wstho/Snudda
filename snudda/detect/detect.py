@@ -1743,30 +1743,24 @@ class SnuddaDetect(object):
         
         put_targets = np.unique(dist[:, :20]) 
         put_targets = put_targets[put_targets > 0]
-        selected_targets = np.random.choice(put_targets, size = min(5, len(put_targets)), replace = False)
+        selected_targets = np.random.choice(put_targets, size = min(10, len(put_targets)), replace = False)
         
-        # for st in selected_targets:
-        #     mask = (dist == st).any(axis=1)
-            
-        m = 20
+        m = 25
         mask = np.zeros(len(dist), dtype=bool)
 
         for target in selected_targets:
-            target_mask = (dist == target).any(axis=1)
-            indices = np.where(target_mask)[0]
+            indices = np.where((dist == target).any(axis=1))[0]
             if len(indices) > m:
-                indices = np.random.choice(indices, m, replace=False)
+                indices = indices[np.random.choice(len(indices), m, replace=False)]
             mask[indices] = True
              
         # mask = np.isin(dist, selected_targets).any(axis=1)
         vox_idx = vox_idx[mask]
-    
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
+        
         return xyz, vox_idx
     
-    #%%
-   
-            
+
 
     #%%
     ############################################################################

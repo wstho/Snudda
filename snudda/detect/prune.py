@@ -1945,11 +1945,11 @@ class SnuddaPrune(object):
         
         for c_id in cutoff:
             c_syn = np.flatnonzero(dests == c_id)
-            r_idx = np.random.randint(0, len(c_syn))
-            indices = (np.arange(r_idx, r_idx + len(c_syn) - threshold)) % len(c_syn)
+            # r_idx = np.random.randint(0, len(c_syn))
+            # indices = (np.arange(r_idx, r_idx + len(c_syn) - threshold)) % len(c_syn)
             
-            del_idx = c_syn[indices]
-            # del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
+            # del_idx = c_syn[indices]
+            del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
             to_delete.append(del_idx)
             
         if to_delete:
@@ -1975,7 +1975,7 @@ class SnuddaPrune(object):
 
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
-        # synapses = self.hard_cutoff(synapses, threshold = 5000)
+        # synapses = self.hard_cutoff(synapses, threshold = 3000)
 
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
@@ -2183,7 +2183,7 @@ class SnuddaPrune(object):
         if n_keep_tot > 0:
             output_file[h5_syn_mat].resize((write_end_pos, output_file[h5_syn_mat].shape[1]))
             synapses = synapses[keep_row_flag, :]
-            synapses = self.hard_cutoff(synapses, threshold = 500)
+            # synapses = self.hard_cutoff(synapses, threshold = 500)
             output_file[h5_syn_mat][write_start_pos:write_end_pos] = synapses
 
             # Update counters
