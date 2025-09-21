@@ -1737,13 +1737,13 @@ class SnuddaDetect(object):
     def get_hyper_voxel_axon_points_new_sparse(self): #, prox_dist = 100):
         
        
-        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 120)).any(axis=3)
+        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 100)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
         vox_idx = np.column_stack(np.where(mask_3d))
         
         put_targets = np.unique(dist[:, :20]) 
         put_targets = put_targets[put_targets > 0]
-        selected_targets = np.random.choice(put_targets, size = min(10, len(put_targets)), replace = False)
+        selected_targets = np.random.choice(put_targets, size = min(8, len(put_targets)), replace = False)
         
         m = 25
         mask = np.zeros(len(dist), dtype=bool)
