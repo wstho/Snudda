@@ -1574,7 +1574,7 @@ class SnuddaDetect(object):
             elif na_neuron["axon_density_type"] == "sparse":
                 (na_voxel_coords, na_axon_dist) = self.no_axon_points_sparse(na_neuron["position"])
             elif na_neuron["axon_density_type"] == "new_sparse":
-                (na_voxel_coords, na_axon_dist) = self.no_axon_points_new_sparse(self.axon_targets[na_neuron['neuron_id']])
+                (na_voxel_coords, na_axon_dist) = self.no_axon_points_new_sparse()
 
             else:
                 self.write_log(f"Unknown axon_density_type: {na_neuron['axon_density_type']}\n{na_neuron}", is_error=True)
@@ -2677,10 +2677,8 @@ class SnuddaDetect(object):
                     
 
         soma_keys, soma_weights = zip(*[(k, len(v['neurons'])) for k, v in self.hyper_voxels.items()])
-        
         self.soma_keys = soma_keys
         self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
-
         rng = np.random.default_rng(23)
         self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 4, replace = False) for _ in range(len(self.neurons))])
         
