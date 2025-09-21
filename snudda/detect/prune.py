@@ -1936,20 +1936,28 @@ class SnuddaPrune(object):
 
     ############################################################################
     
-    def hard_cutoff(self, synapses, threshold):
-        cutoff = np.where(np.bincount(synapses[:, 1])> threshold)[0]
-        
+    def hard_cutoff(self, synapses, threshold=1000):
+
         to_delete = []
         dests = synapses[:, 1]
+        
+        cutoff = np.where(np.bincount(dests)> threshold)[0]
+        
         for c_id in cutoff:
             c_syn = np.flatnonzero(dests == c_id)
-            del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
+            r_idx = np.random.randint(0, len(c_syn))
+            indices = (np.arange(r_idx, r_idx + len(c_syn) - threshold)) % len(c_syn)
+            
+            del_idx = c_syn[indices]
+            # del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
             to_delete.append(del_idx)
             
         if to_delete:
             to_delete = np.concatenate(to_delete)
             synapses = np.delete(synapses, to_delete, axis=0)
+
         return synapses
+    
 
     def prune_synapses_helper(self, synapses, output_file, merge_data_type):
 
@@ -1966,9 +1974,8 @@ class SnuddaPrune(object):
         # Tried to use numba, but dictionaries and h5py._hl.files.File not supported
 
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
-
-
-        synapses = self.hard_cutoff(synapses, threshold = 600)
+        
+        # synapses = self.hard_cutoff(synapses, threshold = 5000)
 
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
@@ -2095,7 +2102,7 @@ class SnuddaPrune(object):
                     "Distance dependent pruning currently only supported for synapses, not gap junctions"
                 # Distance dependent pruning, used for e.g. FS->MS connections
 
-                # distP contains d (variable for distance to soma)
+                # dist_p contains d (variable for distance to soma)
                 d = synapses[next_read_pos:read_end_idx, 8] * 1e-6  # dendrite distance d, used in eval below
                 p = numexpr.evaluate(dist_p)
 
@@ -2175,7 +2182,9 @@ class SnuddaPrune(object):
 
         if n_keep_tot > 0:
             output_file[h5_syn_mat].resize((write_end_pos, output_file[h5_syn_mat].shape[1]))
-            output_file[h5_syn_mat][write_start_pos:write_end_pos] = synapses[keep_row_flag, :]
+            synapses = synapses[keep_row_flag, :]
+            # synapses = self.hard_cutoff(synapses, threshold = 5000)
+            output_file[h5_syn_mat][write_start_pos:write_end_pos] = synapses
 
             # Update counters
             output_file[f"network/{h5_syn_n}"][()] = write_end_pos
