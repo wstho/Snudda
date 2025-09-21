@@ -1737,13 +1737,13 @@ class SnuddaDetect(object):
     def get_hyper_voxel_axon_points_new_sparse(self): #, prox_dist = 100):
         
        
-        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 100)).any(axis=3)
+        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 80)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
         vox_idx = np.column_stack(np.where(mask_3d))
         
         put_targets = np.unique(dist[:, :20]) 
         put_targets = put_targets[put_targets > 0]
-        selected_targets = np.random.choice(put_targets, size = min(8, len(put_targets)), replace = False)
+        selected_targets = np.random.choice(put_targets, size = min(5, len(put_targets)), replace = False)
         
         m = 25
         mask = np.zeros(len(dist), dtype=bool)
@@ -2613,6 +2613,12 @@ class SnuddaDetect(object):
             #                           for n_id in v['neurons'])})
             
             soma_keys, soma_weights = zip(*[(k, len(v['neurons'])) for k, v in self.hyper_voxels.items()])
+            
+            soma_keys, soma_weights = zip(*[
+                (voxel_id, sum(1 for neuron in voxel.get('neurons', {}).values() if 'soma' in neuron))
+                for voxel_id, voxel in self.hyper_voxels.items()
+                if any('soma' in neuron for neuron in voxel.get('neurons', {}).values())
+            ])
             
             self.soma_keys = soma_keys
             self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
