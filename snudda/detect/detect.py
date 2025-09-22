@@ -33,7 +33,7 @@ from snudda.neurons import NeuronMorphologyExtended
 from snudda.neurons.morphology_data import MorphologyData
 from snudda.utils import NumpyEncoder
 from snudda.utils.snudda_path import get_snudda_data, snudda_parse_path
-from snudda.detect.projection_detection import ProjectionDetection
+# from snudda.detect.projection_detection import ProjectionDetection
 from snudda.neurons.neuron_prototype import NeuronPrototype
 from snudda.utils.load import SnuddaLoad
 
@@ -281,7 +281,7 @@ class SnuddaDetect(object):
 
         # Read positions
         self.read_neuron_positions(position_file)
-        self.axon_targets = np.random.randint(1, len(self.neurons), size = (len(self.neurons),20)) #23
+        # self.axon_targets = np.random.randint(1, len(self.neurons), size = (len(self.neurons),20)) #23
 
         self.run_projection = False
         self.projection_detection = None  # Helper class for handling projections between structures
@@ -338,8 +338,8 @@ class SnuddaDetect(object):
 
             # We also need to start the projection code
             
-            self.projection_detection = ProjectionDetection(snudda_detect=self, role=self.role, rc=self.rc)
-            self.projection_detection.find_neurons_projections_in_hyper_voxels()
+            # self.projection_detection = ProjectionDetection(snudda_detect=self, role=self.role, rc=self.rc)
+            # self.projection_detection.find_neurons_projections_in_hyper_voxels()
 
             if d_view is not None:
                 self.parallel_process_hyper_voxels(rc=self.rc, d_view=d_view)
@@ -2548,7 +2548,7 @@ class SnuddaDetect(object):
                     neuron.set_axon_voxel_sparse_density(neuron_info["axon_density"])
                 elif neuron_info["axon_density_type"] == "new_sparse":
                     n_id = neuron_info['neuron_id']
-                    neuron.set_axon_voxel_new_sparse_density(self.axon_targets[n_id])
+                    neuron.set_axon_voxel_new_sparse_density()
     
                 else:
                     raise ValueError(f"Unknown axon density: {neuron_info['axon_density_type']}")
@@ -2622,7 +2622,7 @@ class SnuddaDetect(object):
             self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
             
             rng = np.random.default_rng(42)
-            self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 3, replace = False) for _ in range(len(self.neurons))])
+            self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 4, replace = False) for _ in range(len(self.neurons))])
             
             self.distribute_neurons_axon(distribution_seeds=distribution_seeds, min_coord = min_coord, max_coord = max_coord)
             self.count_and_sort_neurons_in_hypervoxels()
@@ -2697,7 +2697,7 @@ class SnuddaDetect(object):
         self.soma_keys = soma_keys
         self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
         rng = np.random.default_rng(42)
-        self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 3, replace = False) for _ in range(len(self.neurons))])
+        self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 4, replace = False) for _ in range(len(self.neurons))])
         
         self.write_log("Pushing hypervoxels.")
 
@@ -3594,16 +3594,16 @@ class SnuddaDetect(object):
                                         self.axon_soma_dist)
 
             # Finally this adds axon voxels for projections coming from other structures using projection maps
-            try:
-                self.projection_detection.voxelise_projections()
-            except:
-                # !!! TODO remove this bit of logging code
-                import traceback
-                t_str = traceback.format_exc()
-                self.write_log(t_str, is_error=True)
-                print(t_str)
-                import pdb
-                pdb.set_trace()
+            # try:
+            #     self.projection_detection.voxelise_projections()
+            # except:
+            #     # !!! TODO remove this bit of logging code
+            #     import traceback
+            #     t_str = traceback.format_exc()
+            #     self.write_log(t_str, is_error=True)
+            #     print(t_str)
+            #     import pdb
+            #     pdb.set_trace()
 
             # The normal voxel synapse detection
             self.detect_synapses()
