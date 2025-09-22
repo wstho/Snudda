@@ -738,7 +738,8 @@ class SnuddaDetect(object):
 
 
         elif neuron.axon_density_type == "new_sparse":
-            
+            rng = np.random.default_rng(seed)
+
             dend_field = self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0]
             hyper_voxel_id = np.unique(np.concatenate([self.hyper_voxel_targets[n_id], rng.choice(dend_field, size = min(3, len(dend_field)), replace = False)]))
             
