@@ -741,7 +741,7 @@ class SnuddaDetect(object):
             rng = np.random.default_rng(seed)
 
             dend_field = self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0]
-            hyper_voxel_id = np.unique(np.concatenate([self.hyper_voxel_targets[n_id], rng.choice(dend_field, size = min(4, len(dend_field)), replace = False)]))
+            hyper_voxel_id = np.unique(np.concatenate([self.hyper_voxel_targets[n_id], rng.choice(dend_field, size = min(2, len(dend_field)), replace = False)]))
             
             return hyper_voxel_id
 
@@ -1241,11 +1241,12 @@ class SnuddaDetect(object):
                                             self.num_bins[2],
                                             self.max_dend),
                                            dtype=np.int16)
+            self.dend_voxels[:,:,:,:] = -1
             self.dend_soma_dist[:,:,:,:] = -1
 
         else:
             # Already allocated, just clear it
-            self.dend_voxels[:] = 0
+            self.dend_voxels[:] = -1
             self.dend_voxel_ctr[:] = 0
             self.dend_sec_id[:] = 0
             self.dend_sec_x[:] = 0
@@ -1739,27 +1740,27 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self): #, prox_dist = 100):
-        
+    def get_hyper_voxel_axon_points_new_sparse(self):
        
         mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 80)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
         vox_idx = np.column_stack(np.where(mask_3d))
         
-        put_targets = np.unique(dist[:, :20]) 
-        put_targets = put_targets[put_targets > 0]
-        selected_targets = np.random.choice(put_targets, size = min(4, len(put_targets)), replace = False)
+        targets, counts = np.unique(dist[:, :20].ravel(), return_counts = True) 
+        target_p = np.array(counts)/np.sum(counts)
         
-        m = 25
+        if len(targets) > 4:  ##targets per hypervox
+            targets= np.random.choice(targets, p=target_p, size = 4, replace = False)
+            
+        m = 25  ###voxels per target
         mask = np.zeros(len(dist), dtype=bool)
 
-        for target in selected_targets:
+        for target in targets:
             indices = np.where((dist == target).any(axis=1))[0]
             if len(indices) > m:
                 indices = indices[np.random.choice(len(indices), m, replace=False)]
             mask[indices] = True
-             
-        # mask = np.isin(dist, selected_targets).any(axis=1)
+            
         vox_idx = vox_idx[mask]
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         
@@ -2622,7 +2623,7 @@ class SnuddaDetect(object):
             self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
             
             rng = np.random.default_rng(42)
-            self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 4, replace = False) for _ in range(len(self.neurons))])
+            self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 3, replace = False) for _ in range(len(self.neurons))])
             
             self.distribute_neurons_axon(distribution_seeds=distribution_seeds, min_coord = min_coord, max_coord = max_coord)
             self.count_and_sort_neurons_in_hypervoxels()
@@ -2697,7 +2698,7 @@ class SnuddaDetect(object):
         self.soma_keys = soma_keys
         self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
         rng = np.random.default_rng(42)
-        self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 4, replace = False) for _ in range(len(self.neurons))])
+        self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 2, replace = False) for _ in range(len(self.neurons))])
         
         self.write_log("Pushing hypervoxels.")
 
