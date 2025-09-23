@@ -1742,26 +1742,28 @@ class SnuddaDetect(object):
     
     def get_hyper_voxel_axon_points_new_sparse(self):
        
-        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 80)).any(axis=3)
+        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= 100)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
         vox_idx = np.column_stack(np.where(mask_3d))
         
-        targets, counts = np.unique(dist[:, :20].ravel(), return_counts = True) 
-        target_p = np.array(counts)/np.sum(counts)
-        
-        if len(targets) > 4:  ##targets per hypervox
-            targets= np.random.choice(targets, p=target_p, size = 4, replace = False)
+        targets, counts = np.unique(dist[dist > 0], return_counts = True) 
+        if len(targets): ##targets per hypervox
+            target_p = np.array(counts)/np.sum(counts)
+            targets = np.random.choice(targets, p=target_p, size = min(len(targets),np.random.randint(3,7)), replace = False)
+                # targets = np.random.choice(targets, size = 5, replace = False)
+                
+            m = int(np.mean(counts))  ###voxels per target
+            mask = np.zeros(len(dist), dtype=bool)
             
-        m = 25  ###voxels per target
-        mask = np.zeros(len(dist), dtype=bool)
-
-        for target in targets:
-            indices = np.where((dist == target).any(axis=1))[0]
-            if len(indices) > m:
-                indices = indices[np.random.choice(len(indices), m, replace=False)]
-            mask[indices] = True
+            for target in targets:
+                indices = np.where((dist == target).any(axis=1))[0]
+                
+                if len(indices) > m:
+                    indices = indices[np.random.choice(len(indices), m, replace=False)]
+                mask[indices] = True
+                
+            vox_idx = vox_idx[mask]
             
-        vox_idx = vox_idx[mask]
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         
         return xyz, vox_idx

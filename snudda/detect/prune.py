@@ -1908,7 +1908,20 @@ class SnuddaPrune(object):
             self.setup_output_file(output_filename)  # Sets self.outFile
 
             num_syn_kept = 0
+            
+            # pre_counts = collections.defaultdict(int)
+            
+            # for synRange in block_ranges:
+            #     self.write_log(f"getting presynaptic counts: {synRange}")
 
+            #     synapses = synapse_file[h5_syn_mat][synRange[0]:synRange[-1]]
+            #     pre, pre_count = self.get_presynaptic_counts(synapses)
+            #     for p, p_c in zip(pre, pre_count):
+            #         pre_counts[p] += p_c
+
+            # self.pre_counts = pre_counts
+            
+            
             for synRange in block_ranges:
                 self.write_log(f"Pruning range: {synRange}")
 
@@ -1934,28 +1947,47 @@ class SnuddaPrune(object):
 
         return num_syn, num_syn_kept
 
+
+    # def get_presynaptic_counts(self, synapses):
+    #     pre, pre_count = np.unique(np.unique(synapses[:,0:2], axis = 0)[:,0], return_counts = True)
+    #     return pre, pre_count
+
     ############################################################################
     
-    def hard_cutoff(self, synapses, threshold=1000):
-
-        to_delete = []
-        dests = synapses[:, 1]
+    def hard_cutoff(self, synapses, pos = 1, threshold=1000):
         
-        cutoff = np.where(np.bincount(dests)> threshold)[0]
+        assert pos in (0, 1), "Expected 0 or 1 for synapses cutoff"
+        # to_prune = []
+        # sources = synapses[:, 0]
+        # pres, pre_count = np.unique(np.unique(synapses[:,0:2], axis = 0)[:,0], return_counts = True)
+        # pre_p = pre_count/np.sum(pre_count)
+        
+        
+        keep_row_flag = np.ones((synapses.shape[0],), dtype=bool)
+
+        n_id = synapses[:, pos]
+        cutoff = np.where(np.bincount(n_id)> threshold)[0]
         
         for c_id in cutoff:
-            c_syn = np.flatnonzero(dests == c_id)
-            r_idx = np.random.randint(0, len(c_syn))
-            indices = (np.arange(r_idx, r_idx + len(c_syn) - threshold)) % len(c_syn)
-            del_idx = c_syn[indices]
-            # del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
-            to_delete.append(del_idx)
+            c_syn = np.flatnonzero(n_id == c_id)
+            del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
+            # to_prune.append(del_idx)
+            # p = self.pre_counts[sources[c_syn]]
+            # p = p/np.sum(p)
             
-        if to_delete:
-            to_delete = np.concatenate(to_delete)
-            synapses = np.delete(synapses, to_delete, axis=0)
+            # del_idx = np.random.choice(c_syn, p = p, size = len(c_syn) - threshold, replace = False) 
 
-        return synapses
+            # r_idx = np.random.randint(0, len(c_syn))
+            # indices = (np.arange(r_idx, r_idx + len(c_syn) - threshold)) % len(c_syn)
+            # del_idx = c_syn[indices]
+
+            keep_row_flag[del_idx] = False
+            
+        # if to_prune:
+        #     to_prune = np.concatenate(to_prune)
+        #     synapses = np.delete(synapses, to_prune, axis=0)
+
+        return synapses[keep_row_flag]
     
 
     def prune_synapses_helper(self, synapses, output_file, merge_data_type):
@@ -1974,7 +2006,8 @@ class SnuddaPrune(object):
 
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
-        synapses = self.hard_cutoff(synapses, threshold = 1000)
+        synapses = self.hard_cutoff(synapses, pos = 0, threshold = 600)  ##presynaptic
+        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 600)  ##postsynaptic
 
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
