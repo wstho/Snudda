@@ -1957,12 +1957,7 @@ class SnuddaPrune(object):
     def hard_cutoff(self, synapses, pos = 1, threshold=1000):
         
         assert pos in (0, 1), "Expected 0 or 1 for synapses cutoff"
-        # to_prune = []
-        # sources = synapses[:, 0]
-        # pres, pre_count = np.unique(np.unique(synapses[:,0:2], axis = 0)[:,0], return_counts = True)
-        # pre_p = pre_count/np.sum(pre_count)
-        
-        
+
         keep_row_flag = np.ones((synapses.shape[0],), dtype=bool)
 
         n_id = synapses[:, pos]
@@ -1970,24 +1965,19 @@ class SnuddaPrune(object):
         
         for c_id in cutoff:
             c_syn = np.flatnonzero(n_id == c_id)
-            del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
+            r_idx = np.random.randint(0, len(c_syn))
+            del_idx = (np.arange(r_idx, r_idx + len(c_syn) - threshold)) % len(c_syn)
+            # del_idx = np.random.choice(c_syn, size = len(c_syn) - threshold, replace = False) 
             # to_prune.append(del_idx)
             # p = self.pre_counts[sources[c_syn]]
             # p = p/np.sum(p)
-            
             # del_idx = np.random.choice(c_syn, p = p, size = len(c_syn) - threshold, replace = False) 
-
-            # r_idx = np.random.randint(0, len(c_syn))
-            # indices = (np.arange(r_idx, r_idx + len(c_syn) - threshold)) % len(c_syn)
             # del_idx = c_syn[indices]
 
-            keep_row_flag[del_idx] = False
+            keep_row_flag[c_syn[del_idx]] = False
             
-        # if to_prune:
-        #     to_prune = np.concatenate(to_prune)
-        #     synapses = np.delete(synapses, to_prune, axis=0
-        print(len(synapses))
-        print(np.sum(keep_row_flag))
+        # print(len(synapses))
+        # print(np.sum(keep_row_flag))
         return synapses[keep_row_flag]
     
 
@@ -2007,7 +1997,7 @@ class SnuddaPrune(object):
 
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
-        synapses = self.hard_cutoff(synapses, pos = 0, threshold = 800)
+        # synapses = self.hard_cutoff(synapses, pos = 0, threshold = 800)
         synapses = self.hard_cutoff(synapses, pos = 1, threshold = 500)  ##postsynaptic
 
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)

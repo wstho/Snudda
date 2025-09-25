@@ -1751,29 +1751,35 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self, m = 20):
+    def get_hyper_voxel_axon_points_new_sparse(self, m = 20, threshold = 100):
         
-        vox_idx = np.column_stack(np.where(self.prox_vox))
-
         if len(self.prox_targets):
-            dist = self.dend_voxels[self.prox_vox]
-            targets = np.random.choice(self.prox_targets, p=self.prox_target_p, size = min(len(self.prox_targets),int(np.random.normal(loc = 10))), replace = False)
+            
+            mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
+            dist = self.dend_voxels[mask_3d]
+            vox_idx = np.column_stack(np.where(mask_3d))
+
+            targets = np.random.choice(self.prox_targets, p=self.prox_target_p, size = min(len(self.prox_targets),int(np.abs(np.random.normal(loc = 6, scale = 1)))), replace = False)
+
+            m = 20 ###upper limit on synapses/connection, from Microns dataset
             mask = np.zeros(len(dist), dtype=bool)
             for target in targets:
                 indices = np.where((dist == target).any(axis=1))[0]
-                p = np.random.random(size = len(indices))
-                #indices = indices[np.random.choice(len(indices), m, replace=False)]
-                o =  1 - (len(indices) - m)/len(indices) 
+                
+                l_i = len(indices)
+                p = np.random.random(size = l_i)
+                o =  1 - (l_i - m)/l_i
                 indices = indices[o > p]
                 mask[indices] = True
     
             vox_idx = vox_idx[mask]
-                
+        else: 
+            vox_idx = np.empty(shape = (0,3),dtype = int)
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         
         return xyz, vox_idx
 
-    def get_prox_targets(self, threshold = 100):
+    def get_prox_targets(self, threshold = 25):
         mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
         targets, counts = np.unique(dist[dist > -1], return_counts = True) 
@@ -1781,7 +1787,7 @@ class SnuddaDetect(object):
             target_p = np.array(counts)/np.sum(counts)
         else:
             target_p = np.array([1])
-        return mask_3d, targets, target_p
+        return targets, target_p
     
     #%%
     ############################################################################
@@ -3592,8 +3598,7 @@ class SnuddaDetect(object):
                                           section_id=section_id)
                     
                     
-                    prox_vox, prox_targets, prox_target_p = self.get_prox_targets(threshold= 80)
-                    self.prox_vox = prox_vox
+                    prox_targets, prox_target_p = self.get_prox_targets(threshold= 25)
                     self.prox_targets = prox_targets
                     self.prox_target_p = prox_target_p
 
