@@ -1757,8 +1757,8 @@ class SnuddaDetect(object):
 
         if len(self.prox_targets):
             dist = self.dend_voxels[self.prox_vox]
-            targets = np.random.choice(self.prox_targets, p=self.prox_target_p, size = min(len(self.prox_targets),int(np.random.normal(loc = 10))), replace = False)
-            m = 50
+            targets = np.random.choice(self.prox_targets, p=self.prox_target_p, size = min(len(self.prox_targets),np.abs(int(np.random.normal(loc = 4,scale = 1.5)))), replace = False)
+            m = 25
             mask = np.zeros(len(dist), dtype=bool)
             for target in targets:
                 indices = np.where((dist == target).any(axis=1))[0]
@@ -1774,7 +1774,7 @@ class SnuddaDetect(object):
 
     
     
-    def get_prox_targets(self, threshold = 50):
+    def get_prox_targets(self, threshold = 100):
         mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
         targets, counts = np.unique(dist[dist > -1], return_counts = True) 
@@ -3594,7 +3594,7 @@ class SnuddaDetect(object):
                                           section_id=section_id)
                     
                     
-                    prox_vox, prox_targets, prox_target_p = self.get_prox_targets(threshold= 50)
+                    prox_vox, prox_targets, prox_target_p = self.get_prox_targets(threshold= 80)
                     self.prox_vox = prox_vox
                     self.prox_targets = prox_targets
                     self.prox_target_p = prox_target_p

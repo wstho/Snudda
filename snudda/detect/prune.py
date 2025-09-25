@@ -1985,8 +1985,9 @@ class SnuddaPrune(object):
             
         # if to_prune:
         #     to_prune = np.concatenate(to_prune)
-        #     synapses = np.delete(synapses, to_prune, axis=0)
-
+        #     synapses = np.delete(synapses, to_prune, axis=0
+        print(len(synapses))
+        print(np.sum(keep_row_flag))
         return synapses[keep_row_flag]
     
 
@@ -2006,8 +2007,8 @@ class SnuddaPrune(object):
 
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
-        # synapses = self.hard_cutoff(synapses, pos = 0, threshold = 600)
-        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 400)  ##postsynaptic
+        synapses = self.hard_cutoff(synapses, pos = 0, threshold = 800)
+        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 500)  ##postsynaptic
 
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
