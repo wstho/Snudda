@@ -1764,7 +1764,7 @@ class SnuddaDetect(object):
             p = np.array(sc)/np.sum(sc)
         
             try:
-                targets = np.random.choice(targets, p=p, size = min(len(targets),int(np.abs(np.random.normal(loc = 6, scale = 2)))), replace = False)
+                targets = np.random.choice(targets, p=p, size = min(len(targets),int(np.abs(np.random.normal(loc = 8, scale = 2)))), replace = False)
             except:
                 import traceback
                 print(traceback.format_exc())
