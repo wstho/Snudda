@@ -1751,19 +1751,20 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self):
+    def get_hyper_voxel_axon_points_new_sparse(self, m = 20):
         
         vox_idx = np.column_stack(np.where(self.prox_vox))
 
         if len(self.prox_targets):
             dist = self.dend_voxels[self.prox_vox]
-            targets = np.random.choice(self.prox_targets, p=self.prox_target_p, size = min(len(self.prox_targets),np.abs(int(np.random.normal(loc = 4,scale = 1.5)))), replace = False)
-            m = 25
+            targets = np.random.choice(self.prox_targets, p=self.prox_target_p, size = min(len(self.prox_targets),int(np.random.normal(loc = 10))), replace = False)
             mask = np.zeros(len(dist), dtype=bool)
             for target in targets:
                 indices = np.where((dist == target).any(axis=1))[0]
-                if len(indices) > m:
-                    indices = indices[np.random.choice(len(indices), m, replace=False)]
+                p = np.random.random(size = len(indices))
+                #indices = indices[np.random.choice(len(indices), m, replace=False)]
+                o =  1 - (len(indices) - m)/len(indices) 
+                indices = indices[o > p]
                 mask[indices] = True
     
             vox_idx = vox_idx[mask]
@@ -1772,8 +1773,6 @@ class SnuddaDetect(object):
         
         return xyz, vox_idx
 
-    
-    
     def get_prox_targets(self, threshold = 100):
         mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
@@ -1783,7 +1782,6 @@ class SnuddaDetect(object):
         else:
             target_p = np.array([1])
         return mask_3d, targets, target_p
-    
     
     #%%
     ############################################################################
