@@ -1998,7 +1998,7 @@ class SnuddaPrune(object):
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
         # synapses = self.hard_cutoff(synapses, pos = 0, threshold = 800)
-        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 500)  ##postsynaptic
+        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 600)  ##postsynaptic
 
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 

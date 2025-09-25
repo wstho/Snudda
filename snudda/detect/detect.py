@@ -19,6 +19,7 @@ import sys
 import time
 import timeit
 import gc
+from collections import Counter
 
 import h5py
 import numexpr
@@ -257,8 +258,8 @@ class SnuddaDetect(object):
 
         # This is an upper limit how many axon/dend we allow in each voxel max
         # 10 overflowed
-        self.max_axon = 50
-        self.max_dend = 20
+        self.max_axon = 60
+        self.max_dend = 20 
         
         self.max_neurons = 15000
         self.max_synapses = 2000000
@@ -1751,21 +1752,29 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self, m = 20, threshold = 100):
+    def get_hyper_voxel_axon_points_new_sparse(self, m = 25, threshold = 100):
         
-        if len(self.prox_targets):
-            
-            mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
-            dist = self.dend_voxels[mask_3d]
-            vox_idx = np.column_stack(np.where(mask_3d))
+        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
+        dist = self.dend_voxels[mask_3d]
+        vox_idx = np.column_stack(np.where(mask_3d))
+        
+        targets = np.unique(dist[dist > -1]) 
+        if len(targets)> 0: 
+            sc = self.soma_hv_counts[targets]*1e-1
+            p = np.array(sc)/np.sum(sc)
+        
+            try:
+                targets = np.random.choice(targets, p=p, size = min(len(targets),int(np.abs(np.random.normal(loc = 6, scale = 2)))), replace = False)
+            except:
+                import traceback
+                print(traceback.format_exc())
+                import pdb
+                pdb.set_trace()
 
-            targets = np.random.choice(self.prox_targets, p=self.prox_target_p, size = min(len(self.prox_targets),int(np.abs(np.random.normal(loc = 6, scale = 1)))), replace = False)
-
-            m = 20 ###upper limit on synapses/connection, from Microns dataset
+            ###upper limit on synapses/connection, from Microns dataset
             mask = np.zeros(len(dist), dtype=bool)
             for target in targets:
                 indices = np.where((dist == target).any(axis=1))[0]
-                
                 l_i = len(indices)
                 p = np.random.random(size = l_i)
                 o =  1 - (l_i - m)/l_i
@@ -1773,21 +1782,19 @@ class SnuddaDetect(object):
                 mask[indices] = True
     
             vox_idx = vox_idx[mask]
-        else: 
-            vox_idx = np.empty(shape = (0,3),dtype = int)
+
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
-        
         return xyz, vox_idx
 
-    def get_prox_targets(self, threshold = 25):
-        mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
-        dist = self.dend_voxels[mask_3d]
-        targets, counts = np.unique(dist[dist > -1], return_counts = True) 
-        if len(targets): ##targets per hypervox
-            target_p = np.array(counts)/np.sum(counts)
-        else:
-            target_p = np.array([1])
-        return targets, target_p
+    # def get_prox_targets(self, threshold = 25):
+    #     mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
+    #     dist = self.dend_voxels[mask_3d]
+    #     targets, counts = np.unique(dist[dist > -1], return_counts = True) 
+    #     if len(targets): ##targets per hypervox
+    #         target_p = np.array(counts)/np.sum(counts)
+    #     else:
+    #         target_p = np.array([1])
+    #     return targets, target_p
     
     #%%
     ############################################################################
@@ -2596,6 +2603,30 @@ class SnuddaDetect(object):
         return neuron
 
     ############################################################################
+    
+    
+    
+    def somas_per_hv(self):
+        soma_counts = np.zeros(len(self.neurons), dtype=int)
+        
+        for voxel in self.hyper_voxels.values():
+            for neuron_id, neuron in voxel.get('neurons', {}).items():
+                if 'soma' in neuron:
+                    soma_counts[neuron_id] += 1
+        
+        hv_id, soma_weights, hv_somas = zip(*[(
+        voxel_id,
+        sum(1 / soma_counts[neuron_id]
+            for neuron_id, neuron in voxel.get('neurons', {}).items()
+            if 'soma' in neuron),
+        [neuron_id for neuron_id, neuron in voxel.get('neurons', {}).items()
+         if 'soma' in neuron]
+            )
+            for voxel_id, voxel in self.hyper_voxels.items()
+            if any('soma' in neuron for neuron in voxel.get('neurons', {}).values())
+        ])
+        
+        return hv_id, soma_weights, hv_somas, soma_counts
 
     def distribute_neurons_parallel(self, d_view=None):
 
@@ -2634,17 +2665,14 @@ class SnuddaDetect(object):
 
             (min_coord, max_coord) = self.distribute_neurons(distribution_seeds=distribution_seeds)
             
-            soma_keys, soma_weights = zip(*[
-                (voxel_id, sum(1 for neuron in voxel.get('neurons', {}).values() if 'soma' in neuron))
-                for voxel_id, voxel in self.hyper_voxels.items()
-                if any('soma' in neuron for neuron in voxel.get('neurons', {}).values())
-            ])
-                    
-            self.soma_keys = soma_keys
+            hv_id, soma_weights, hv_somas, soma_hv_counts = self.somas_per_hv()
+            self.hv_id = hv_id
             self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
-            # self.somas = somas
+            self.hv_somas = hv_somas
+            self.soma_hv_counts = soma_hv_counts
+            
             rng = np.random.default_rng(42)
-            self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 2, replace = False) for _ in range(len(self.neurons))])
+            self.hyper_voxel_targets = np.array([rng.choice(self.hv_id, p=self.soma_p, size = 2, replace = False) for _ in range(len(self.neurons))])
             
             self.distribute_neurons_axon(distribution_seeds=distribution_seeds, min_coord = min_coord, max_coord = max_coord)
             self.count_and_sort_neurons_in_hypervoxels()
@@ -2692,11 +2720,9 @@ class SnuddaDetect(object):
         # For each neuron we found out which hyper voxels it occupies,
         # now we want for each hyper voxel to know which neurons are in there
         hyper_voxel_list = d_view.gather("sd.hyper_voxels", block=True)
-
-
+        
         self.write_log("Distributions received.")
         
-
         for hv in hyper_voxel_list:
             for hid in hv:
 
@@ -2710,20 +2736,18 @@ class SnuddaDetect(object):
                     self.hyper_voxels[hid]["neurons"][neuron_id] = hv[hid]["neurons"][neuron_id]
                     
 
-        soma_keys, soma_weights = zip(*[
-            (voxel_id, sum(1 for neuron in voxel.get('neurons', {}).values() if 'soma' in neuron))
-            for voxel_id, voxel in self.hyper_voxels.items()
-            if any('soma' in neuron for neuron in voxel.get('neurons', {}).values())
-        ])
-                
-        self.soma_keys = soma_keys
+        hv_id, soma_weights, hv_somas, soma_hv_counts = self.somas_per_hv()
+        self.hv_id = hv_id
         self.soma_p = np.array(soma_weights)/np.sum(soma_weights)
+        self.hv_somas = hv_somas
+        self.soma_hv_counts = soma_hv_counts
+        
         rng = np.random.default_rng(42)
-        self.hyper_voxel_targets = np.array([rng.choice(self.soma_keys, p=self.soma_p, size = 2, replace = False) for _ in range(len(self.neurons))])
+        self.hyper_voxel_targets = np.array([rng.choice(self.hv_id, p=self.soma_p, size = 2, replace = False) for _ in range(len(self.neurons))])
         
         self.write_log("Pushing hypervoxels.")
 
-        d_view.push({"sd.hyper_voxels": self.hyper_voxels, "sd.hyper_voxel_targets": self.hyper_voxel_targets}, block=True)
+        d_view.push({"sd.hyper_voxels": self.hyper_voxels, "sd.hyper_voxel_targets": self.hyper_voxel_targets, "sd.hv_somas": self.hv_somas, "sd.soma_hv_counts":self.soma_hv_counts}, block=True)
         self.distribute_neurons_axon(neuron_idx=[], min_coord=min_coord, max_coord=max_coord, distribution_seeds=[])
                     
         self.write_log("Distributing axons.")
@@ -3597,10 +3621,6 @@ class SnuddaDetect(object):
                                           neuron_id=neuron_id,
                                           section_id=section_id)
                     
-                    
-                    prox_targets, prox_target_p = self.get_prox_targets(threshold= 25)
-                    self.prox_targets = prox_targets
-                    self.prox_target_p = prox_target_p
 
                 if "axon" in neuron_info:
                     for section_id, subtree in neuron_info["axon"]:
