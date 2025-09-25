@@ -749,13 +749,11 @@ class SnuddaDetect(object):
             # dend_target_hv = rng.choice(dend_hv, p = dend_hv_p, size = 1)
             # hyper_voxel_id = np.concatenate([target_hv, dend_target_hv])
             
-            dend_hv = self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron'][:,0]
-            
-            if dend_hv[0] not in target_hv:
-                return np.concatenate([target_hv, [dend_hv[0]]])
-            else:
-                return target_hv
-            
+            n_hv = self.get_hypervoxel_coords_and_section_id(neuron = neuron)['neuron']
+            soma_hv = n_hv[np.where(n_hv[:, 1] == 1)[0], 0]
+
+            return np.unique(np.concatenate([target_hv, soma_hv]))
+
 
         if axon_loc is not None:
             inside_idx = np.sum(np.logical_and(0 <= axon_loc, axon_loc < self.hyper_voxel_id_lookup.shape), axis=1) == 3
@@ -1752,7 +1750,7 @@ class SnuddaDetect(object):
         return xyz[inside_idx, :], vox_idx[inside_idx, :]
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self, m = 25, threshold = 100):
+    def get_hyper_voxel_axon_points_new_sparse(self, m = 20, threshold = 100):
         
         mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
         dist = self.dend_voxels[mask_3d]
@@ -1764,7 +1762,7 @@ class SnuddaDetect(object):
             p = np.array(sc)/np.sum(sc)
         
             try:
-                targets = np.random.choice(targets, p=p, size = min(len(targets),int(np.abs(np.random.normal(loc = 8, scale = 2)))), replace = False)
+                targets = np.random.choice(targets, p=p, size = min(len(targets),int(np.abs(np.random.normal(loc = 20, scale = 2)))), replace = False)
             except:
                 import traceback
                 print(traceback.format_exc())
@@ -1777,8 +1775,9 @@ class SnuddaDetect(object):
                 indices = np.where((dist == target).any(axis=1))[0]
                 l_i = len(indices)
                 p = np.random.random(size = l_i)
-                o =  1 - (l_i - m)/l_i
+                o =  1 - (l_i - m)/(m+l_i)
                 indices = indices[o > p]
+                # in
                 mask[indices] = True
     
             vox_idx = vox_idx[mask]
@@ -1786,15 +1785,6 @@ class SnuddaDetect(object):
         xyz = vox_idx*self.voxel_size + self.hyper_voxel_origo
         return xyz, vox_idx
 
-    # def get_prox_targets(self, threshold = 25):
-    #     mask_3d = ((self.dend_soma_dist > -1) & (self.dend_soma_dist <= threshold)).any(axis=3)
-    #     dist = self.dend_voxels[mask_3d]
-    #     targets, counts = np.unique(dist[dist > -1], return_counts = True) 
-    #     if len(targets): ##targets per hypervox
-    #         target_p = np.array(counts)/np.sum(counts)
-    #     else:
-    #         target_p = np.array([1])
-    #     return targets, target_p
     
     #%%
     ############################################################################
