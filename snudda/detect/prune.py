@@ -1998,7 +1998,7 @@ class SnuddaPrune(object):
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
         # synapses = self.hard_cutoff(synapses, pos = 0, threshold = 800)
-        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 600)  ##postsynaptic
+        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 700)  ##postsynaptic
 
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
@@ -2147,7 +2147,7 @@ class SnuddaPrune(object):
                 # p_keep = np.where(n_keep <= soft_max, 1.0, np.exp(-(n_keep - soft_max) / 3))
                 
                 # p_keep = 1 -1.0 / (1.0 + np.exp(-1 * (n_keep - soft_max)))
-                p_keep = 1 - (n_keep - soft_max)/n_keep
+                p_keep = 1 - (n_keep - soft_max)/(soft_max + n_keep)
 
                 
                 keep_row_flag[next_read_pos:read_end_idx] = \
