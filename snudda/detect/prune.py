@@ -1980,6 +1980,25 @@ class SnuddaPrune(object):
         return synapses[keep_row_flag]
     
     
+    def balance_targets(self, synapses, n_neurons = None):
+        
+        rng = np.random.default_rng(42)
+        n_neurons = self.hist_file["network/neurons/neuron_id"].shape[0]
+            
+        post_n_id = synapses[:, 1]
+        untargeted = np.setdiff1d( np.arange(n_neurons), post_n_id)
+        
+        targeted, targ_counts = np.unique(synapses[:, 1], return_counts=True)
+        overtargeted = targeted[np.argsort(targ_counts)[::-1]][:len(untargeted)]
+        
+        for ot, ut in zip(overtargeted, untargeted):
+            ot_indices = np.where(synapses[:, 1] == ot)[0]
+            r_idx = rng.integers(0, len(ot_indices))
+            swap_indices = ot_indices[(np.arange(r_idx, r_idx + int(0.5*len(ot_indices)))) % len(ot_indices)]
+            synapses[swap_indices, 1] = ut
+            
+        return synapses[np.argsort(synapses[:, 1])]
+
 
 
     def prune_synapses_helper(self, synapses, output_file, merge_data_type):
@@ -1998,10 +2017,8 @@ class SnuddaPrune(object):
 
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
-        # synapses = self.hard_cutoff(synapses, pos = 0, threshold = 1000)
-        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 600)  ##postsynaptic
-        # synapses = self.remove_duplicates(synapses) 
-
+        # synapses = self.hard_cutoff(synapses, pos = 0, threshold = 1000)  ##presynaptic
+        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 700)  ##posts1ynaptic
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
         next_read_pos = 0
@@ -2208,6 +2225,8 @@ class SnuddaPrune(object):
         if n_keep_tot > 0:
             output_file[h5_syn_mat].resize((write_end_pos, output_file[h5_syn_mat].shape[1]))
             synapses = synapses[keep_row_flag, :]
+            # synapses = self.balance_targets(synapses, n_neurons = 14000)
+
             output_file[h5_syn_mat][write_start_pos:write_end_pos] = synapses
 
             # Update counters
