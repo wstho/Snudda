@@ -1999,8 +1999,40 @@ class SnuddaPrune(object):
             
         return synapses[np.argsort(synapses[:, 1])]
 
+    def cutoff_connections(self, synapses), threshold = 20:
+        print('CUTOFF')
+        print(len(synapses))
+        
+        rng = np.random.default_rng(42)
+        
+        conn = np.unique(synapses[:, :2], axis = 0)
+        keep_row_flag = np.ones((conn.shape[0],), dtype=bool)
 
+        pres, pre_counts = np.unique(conn[:, 0],return_counts = True)
+        print(set(np.arange(0,14000)).difference(set(pres)))
+        posts, post_counts = np.unique(conn[:, 1],return_counts = True)
+        
+        pre_count_dict = dict(zip(pres, pre_counts))
+        post_count_dict = dict(zip(posts, post_counts))
+        pre_lookup = np.array([pre_count_dict[pre_id] for pre_id in conn[:, 0]])
+        post_lookup = np.array([post_count_dict[post_id] for post_id in conn[:, 1]])
+        
+        p_pre = 1 / (1 + np.exp(alpha * (pre_lookup - threshold)))
+        p_post = 1 / (1 + np.exp(alpha * (post_lookup - threshold)))
+        
+        probabilities = 0.5*p_pre + 0.5*p_post        
+        p_keep = rng.random(len(probabilities))
+        keep_row_flag[p_keep < probabilities] = False
+        updated_conn = conn[keep_row_flag]
+        
+        updated_set = set(map(tuple, updated_conn))
+        keep_mask = np.fromiter((tuple(row[:2]) in updated_set for row in synapses), dtype=bool, count=len(synapses))
+          
+        print(len(synapses[keep_mask]))
 
+        return synapses[keep_mask]
+    
+    
     def prune_synapses_helper(self, synapses, output_file, merge_data_type):
 
         """
@@ -2018,7 +2050,9 @@ class SnuddaPrune(object):
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
         # synapses = self.hard_cutoff(synapses, pos = 0, threshold = 1000)  ##presynaptic
-        synapses = self.hard_cutoff(synapses, pos = 1, threshold = 700)  ##posts1ynaptic
+        # synapses = self.hard_cutoff(synapses, pos = 1, threshold = 700)  ##posts1ynaptic
+        
+        synapses = self.cutoff_connections(synapses)
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
         next_read_pos = 0
@@ -2225,7 +2259,6 @@ class SnuddaPrune(object):
         if n_keep_tot > 0:
             output_file[h5_syn_mat].resize((write_end_pos, output_file[h5_syn_mat].shape[1]))
             synapses = synapses[keep_row_flag, :]
-            # synapses = self.balance_targets(synapses, n_neurons = 14000)
 
             output_file[h5_syn_mat][write_start_pos:write_end_pos] = synapses
 

@@ -1808,7 +1808,7 @@ class SnuddaDetect(object):
         return indices[:count], found_targets[:count]
             
 
-    def distance_threshold(self, threshold = 100):
+    def distance_threshold(self, threshold = 80):
         
         dist_condition = numexpr.evaluate('(dend_soma_dist > -2) & (dend_soma_dist <= threshold)', 
                                local_dict={'dend_soma_dist': self.dend_soma_dist, 'threshold': threshold})
@@ -1846,7 +1846,7 @@ class SnuddaDetect(object):
         return weights / np.sum(weights)
     
     
-    def get_hyper_voxel_axon_points_new_sparse(self, n_id, t = 10, m = 15):
+    def get_hyper_voxel_axon_points_new_sparse(self, n_id, t = 20, m = 20):
         
         rng = np.random.default_rng()
         dist = self.dist
