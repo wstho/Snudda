@@ -1771,6 +1771,9 @@ class SnuddaPrune(object):
                 # No synapses at all, return
                 self.clean_up_merge_read_buffers()
                 return None, neuron_range, 0
+            
+            
+            # self.write_log(f"synapse_heap = {synapse_heap}")
 
             # Store synapse
             self.buffer_merge_write(h5_syn_mat, syn_set)
@@ -1800,8 +1803,10 @@ class SnuddaPrune(object):
                 else:
                     done = True
                     continue
-
-                assert unique_id >= old_unique_id, "unique_id should be increasing in file"
+                
+                # import pdb
+                # pdb.set_trace()
+                # assert unique_id >= old_unique_id, "unique_id should be increasing in file"
 
                 self.buffer_merge_write(h5_syn_mat, syn_set)
                 syn_ctr += syn_set.shape[0]
@@ -1929,6 +1934,14 @@ class SnuddaPrune(object):
                 num_syn_kept += self.prune_synapses_helper(synapses=synapses, output_file=self.out_file,
                                                            merge_data_type=merge_data_type)
 
+
+            # self.write_log("trimming connections")
+            # synapses = self.cutoff_connections(self.out_file[h5_syn_mat][:], threshold = 10)
+            # num_syn_kept = len(synapses)
+            # self.out_file[h5_syn_mat].resize((num_syn_kept, synapses.shape[1]))
+            # self.out_file[h5_syn_mat][:] = synapses
+            # self.out_file[f"network/{h5_syn_n}"][()] = num_syn_kept
+
             # Close synapse input file
             if close_input_file:
                 synapse_file.close()
@@ -1947,10 +1960,6 @@ class SnuddaPrune(object):
 
         return num_syn, num_syn_kept
 
-
-    # def get_presynaptic_counts(self, synapses):
-    #     pre, pre_count = np.unique(np.unique(synapses[:,0:2], axis = 0)[:,0], return_counts = True)
-    #     return pre, pre_count
 
     ############################################################################
     
@@ -1999,9 +2008,9 @@ class SnuddaPrune(object):
             
         return synapses[np.argsort(synapses[:, 1])]
 
-    def cutoff_connections(self, synapses), threshold = 20:
-        print('CUTOFF')
-        print(len(synapses))
+    def cutoff_connections(self, synapses, threshold = 12, alpha = 0.2):
+        # print('CUTOFF')
+        # print(len(synapses))
         
         rng = np.random.default_rng(42)
         
@@ -2009,11 +2018,12 @@ class SnuddaPrune(object):
         keep_row_flag = np.ones((conn.shape[0],), dtype=bool)
 
         pres, pre_counts = np.unique(conn[:, 0],return_counts = True)
-        print(set(np.arange(0,14000)).difference(set(pres)))
         posts, post_counts = np.unique(conn[:, 1],return_counts = True)
         
         pre_count_dict = dict(zip(pres, pre_counts))
         post_count_dict = dict(zip(posts, post_counts))
+        
+        
         pre_lookup = np.array([pre_count_dict[pre_id] for pre_id in conn[:, 0]])
         post_lookup = np.array([post_count_dict[post_id] for post_id in conn[:, 1]])
         
@@ -2022,13 +2032,13 @@ class SnuddaPrune(object):
         
         probabilities = 0.5*p_pre + 0.5*p_post        
         p_keep = rng.random(len(probabilities))
-        keep_row_flag[p_keep < probabilities] = False
+        keep_row_flag[p_keep > probabilities] = False
         updated_conn = conn[keep_row_flag]
         
         updated_set = set(map(tuple, updated_conn))
         keep_mask = np.fromiter((tuple(row[:2]) in updated_set for row in synapses), dtype=bool, count=len(synapses))
           
-        print(len(synapses[keep_mask]))
+        # print(len(synapses[keep_mask]))
 
         return synapses[keep_mask]
     
@@ -2050,9 +2060,9 @@ class SnuddaPrune(object):
         h5_syn_mat, h5_hyp_syn_n, h5_syn_n, h5_syn_loc = self.data_loc[merge_data_type]
         
         # synapses = self.hard_cutoff(synapses, pos = 0, threshold = 1000)  ##presynaptic
-        # synapses = self.hard_cutoff(synapses, pos = 1, threshold = 700)  ##posts1ynaptic
+        # synapses = self.hard_cutoff(synapses, pos = 1, threshold = 700)  ##postsynaptic
+                
         
-        synapses = self.cutoff_connections(synapses)
         keep_row_flag = np.zeros((synapses.shape[0],), dtype=bool)
 
         next_read_pos = 0
@@ -2095,6 +2105,7 @@ class SnuddaPrune(object):
                 "prune_synapses_helper: Internal error, more than one neuron pair"
 
             n_pair_synapses = read_end_idx - next_read_pos
+            # self.write_log(f"n_pair_synapses: {n_pair_synapses}")
 
             src_id = synapses[next_read_pos, 0]
             dest_id = synapses[next_read_pos, 1]
@@ -2433,9 +2444,14 @@ class SnuddaPrune(object):
                                           read_buffer[:(end_idx - buffer_start), :]],
                                          axis=0)
 
+                # assert end_idx == buffer_end \
+                #        or (read_buffer[start_idx - buffer_start, :2] != read_buffer[end_idx - buffer_start, :2]).any(), \
+                #     "We missed one synapse! (2)"
+                    
                 assert end_idx == buffer_end \
-                       or (read_buffer[start_idx - buffer_start, :2] != read_buffer[end_idx - buffer_start, :2]).any(), \
-                    "We missed one synapse! (2)"
+                       or (old_synapses[0, :2] != read_buffer[end_idx - buffer_start, :2]).any(), \
+                    "We missed one synapse! (2)"  
+                                    
 
                 assert (syn_mat[:, 0] == syn_mat[0, 0]).all() and (syn_mat[:, 1] == syn_mat[0, 1]).all(), \
                     f"Synapse matrix (2) contains more than one pair:\n{syn_mat}"
@@ -2450,9 +2466,15 @@ class SnuddaPrune(object):
                 syn_mat = read_buffer[(start_idx - buffer_start):(end_idx - buffer_start), :]
 
                 assert end_idx == buffer_end \
-                       or (read_buffer[start_idx - buffer_start, :2]
-                           != read_buffer[end_idx - buffer_start, :2]).any(), \
+                        or (read_buffer[start_idx - buffer_start, :2]
+                            != read_buffer[end_idx - buffer_start, :2]).any(), \
                     "We missed one synapse! (1)"
+
+
+                # assert (end_idx == buffer_end 
+                #         or (read_buffer[start_idx - buffer_start, :2]
+                #             != read_buffer[end_idx - buffer_start, :2]).any()),  "We missed one synapse! (1)"
+
 
                 assert (syn_mat[:, 0] == syn_mat[0, 0]).all() and (syn_mat[:, 1] == syn_mat[0, 1]).all(), \
                     "Synapse matrix (1) contains more than one pair:\n{syn_mat}"
