@@ -410,10 +410,14 @@ class NeuronMorphologyExtended:
 
         comp_len = soma_dist.copy()
         comp_len[1:] -= soma_dist[parent_idx[1:]]
+        # comp_len = np.linalg.norm(geometry[:, :3] - geometry[parent_idx, :3], axis=1)
+
 
         assert (comp_len[1:] > 0).all(), "Internal error. Zero or negative compartment lengths."
 
         comp_synapse_density = (synapse_density + synapse_density[parent_idx]) / 2
+        
+        
         expected_synapses = np.multiply(comp_len, comp_synapse_density)
         expected_sum = np.sum(expected_synapses[dend_idx])
 
@@ -458,13 +462,23 @@ class NeuronMorphologyExtended:
                 comp_x = rng.random(num_locations)
                 xyz = comp_x[:, None] * geometry[syn_idx, :3] + (1-comp_x[:, None]) * geometry[parent_idx[syn_idx], :3]
                 sec_id = section_data[syn_idx, 0]
-                sec_x = comp_x * section_data[syn_idx, 1] + (1-comp_x) * section_data[parent_idx[syn_idx], 1]
+                # sec_x = comp_x * section_data[syn_idx, 1] + (1-comp_x) * section_data[parent_idx[syn_idx], 1]
+                
+                same_section = np.all(section_data[syn_idx][:, [0, 2]] == section_data[parent_idx[syn_idx]][:, [0, 2]], axis=1)
+
+                sec_x = np.where(same_section,
+                                  comp_x * section_data[syn_idx, 1] + (1-comp_x) * section_data[parent_idx[syn_idx], 1],
+                                  comp_x * section_data[syn_idx, 1])       
+
+                
                 dist_to_soma = comp_x * geometry[syn_idx, 4] + (1-comp_x) * geometry[parent_idx[syn_idx], 4]
+
+    
             except:
-                import traceback
-                print(traceback.format_exc())
-                import pdb
-                pdb.set_trace()
+                 import traceback
+                 print(traceback.format_exc())
+                 import pdb
+                 pdb.set_trace()
 
         else:
             # If either end point of the section is within cluster_spread/2 then we need to

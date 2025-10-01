@@ -1577,9 +1577,9 @@ class SnuddaDetect(object):
         return presyn
     
     
-    def balance_presyn(self, presyn, rng,  n_total_neurons = 14000): 
+    def balance_presyn(self, presyn, rng,  total_n_neurons = 14000): 
         presyn_id, presyn_count = np.unique(np.concatenate(presyn), return_counts = True)
-        represented = np.zeros(n_total_neurons, dtype=bool)
+        represented = np.zeros(total_n_neurons, dtype=bool)
         represented[presyn_id[presyn_count >= 3]] = True
         underrepresented = np.where(~represented)[0]
      
@@ -1606,7 +1606,7 @@ class SnuddaDetect(object):
         else:
             self.write_log('Setting up distance dependent targets')
             presyn = self.dist_dependent_targets(all_n_conns, rng, total_n_neurons)
-            presyn = self.balance_presyn(presyn, rng)
+            presyn = self.balance_presyn(presyn, rng, total_n_neurons)
         return presyn
 
     def sparse_synapses(self, hyper_id, n_contacts = 10.2):
