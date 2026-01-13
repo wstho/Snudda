@@ -13,7 +13,7 @@ Please cite the first paper for the general Snudda network creation and simulati
 
 * *Predicting Synaptic Connectivity for Large-Scale Microcircuit Simulations Using Snudda.* J. J. Johannes Hjorth, Jeanette Hellgren Kotaleski, Alexander Kozlov. Neuroinform (2021). https://doi.org/10.1007/s12021-021-09531-w
 
-* * W.S. Thompson, J.J.J. Hjorth, A. Kozlov, W. Thunberg, G. Silberberg, J. Hellgren Kotaleski, & S. Grillner, Synaptic integration and competition in the substantia nigra pars reticulata—An experimental and in silico analysis, Proc. Natl. Acad. Sci. U.S.A. 122 (52) e2528602122, https://doi.org/10.1073/pnas.2528602122 (2025).
+* *Synaptic integration and competition in the substantia nigra pars reticulata—An experimental and in silico analysis.* W.S. Thompson, J.J.J. Hjorth, A. Kozlov, W. Thunberg, G. Silberberg, J. Hellgren Kotaleski, & S. Grillner.  Proc. Natl. Acad. Sci. U.S.A. (2025). 122 (52) e2528602122, https://doi.org/10.1073/pnas.2528602122 
 
 ## Additional information:
 
