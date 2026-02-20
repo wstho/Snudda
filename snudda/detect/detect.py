@@ -3044,7 +3044,10 @@ class SnuddaDetect(object):
 
             self.hv_somas = self.somas_per_hv()
             # self.sparse_lookup = self.sparse_input_loc_lookup(L = 200)
-            self.all_presyn = self.setup_sparse_targets(n_conns=10)
+            if self.connectivity_distributions:
+                self.all_presyn = self.setup_sparse_targets(n_conns=10)
+            else:
+                self.all_presyn = []
             
             # self.soma_count= {}
             # for hv in self.hv_somas.keys():
@@ -3118,7 +3121,11 @@ class SnuddaDetect(object):
         #     self.soma_count[hv] = len(self.hv_somas[hv])
         self.hv_somas = self.somas_per_hv()
         # self.sparse_lookup = self.sparse_input_loc_lookup(L = 200)
-        self.all_presyn = self.setup_sparse_targets(n_conns=10)
+        
+        if self.connectivity_distributions:
+            self.all_presyn = self.setup_sparse_targets(n_conns=10)
+        else:
+            self.all_presyn = []
 
         self.write_log("Pushing hypervoxels.")
 
@@ -4031,9 +4038,9 @@ class SnuddaDetect(object):
             # The normal voxel synapse detection
             # self.detect_synapses()
 
-            # self.detect_gap_junctions()
-            
-            self.sparse_synapses(hyper_id)
+            self.detect_gap_junctions()
+            if self.connectivity_distributions:
+                self.sparse_synapses(hyper_id)
 
             self.write_hyper_voxel_to_hdf5()
 

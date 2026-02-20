@@ -388,6 +388,7 @@ class NeuronMorphologyExtended:
 
         try:
             synapse_density[d_idx] = numexpr.evaluate(synapse_density_str)
+            synapse_density = np.nan_to_num(synapse_density, nan=0.0)
         except:
             self.write_log(f"Bad synapse density string: {synapse_density_str}")
             import traceback
@@ -407,7 +408,7 @@ class NeuronMorphologyExtended:
         section_data = self.morphology_data["neuron"].section_data
         soma_dist = geometry[:, 4]
         parent_idx = section_data[:, 3]
-
+        
         comp_len = soma_dist.copy()
         comp_len[1:] -= soma_dist[parent_idx[1:]]
         # comp_len = np.linalg.norm(geometry[:, :3] - geometry[parent_idx, :3], axis=1)

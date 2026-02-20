@@ -1949,6 +1949,16 @@ class SnuddaSimulate(object):
         if isinstance(neuron_id, int):
             neuron_id = [neuron_id]
             
+        if isinstance(amplitude, int):
+            amplitude = [amplitude]*len(neuron_id)
+        elif amplitude == 'lookup':
+            amplitude = {}
+            with open('/Users/wst/Desktop/Karolinska/Simulation/Neuron/minus_70_current_injection_lookup.json', 'r') as f:
+                amp_lookup = json.load(f)
+            for n_id in neuron_id: 
+                print(self.network_info["neurons"][n_id]["neuron_path"])
+                amplitude[n_id] = amp_lookup[self.network_info["neurons"][n_id]["neuron_path"].split('/')[-1]]*1e-9
+        
         for n_id in neuron_id:
             if n_id not in self.neuron_id:
                 # The neuron ID does not exist on this worker
@@ -1956,7 +1966,8 @@ class SnuddaSimulate(object):
             cur_stim = self.sim.neuron.h.IClamp(0.5, sec=self.neurons[n_id].icell.soma[0])
             cur_stim.delay = start_time * 1e3
             cur_stim.dur = (end_time - start_time) * 1e3
-            cur_stim.amp = amplitude * 1e9  # What is units of amp?? nA??
+
+            cur_stim.amp = amplitude[n_id] * 1e9  # What is units of amp?? nA??
             self.i_stim.append(cur_stim)
 
     ############################################################################

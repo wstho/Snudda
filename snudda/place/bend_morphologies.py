@@ -58,7 +58,7 @@ class BendMorphologies:
                 parent_dir, parent_point, parent_dist, parent_moved = parent_direction[section.section_id, section.section_type]
             else:
                 if morphology.rotation is not None:
-                    # parent_dir = np.matmul(morphology.rotation, np.array([[0], [0], [1]])).T
+                    # parent_dir = np.matmul(morphology.rotation, np.array([[1], [0], [0]])).T
                     # print(morphology.rotation)
                     # parent_dir = morphology.rotation
                     parent_dir = np.array([[1, 0, 0]])
@@ -178,7 +178,7 @@ class BendMorphologies:
                 parent_dir, parent_pos = parent_direction[section.section_id, section.section_type]
             else:
                 if morphology.rotation is not None:
-                    # parent_dir = np.matmul(morphology.rotation, np.array([[0, 0, 1]]).T).T
+                    # parent_dir = np.matmul(morphology.rotation, np.array([[1, 0, 0]]).T).T
                     parent_dir = np.array([[1, 0, 0]])
 
                 else:
@@ -373,28 +373,19 @@ class BendMorphologies:
                                  k_dist=30e-6, max_angle=0.1, n_random=5,
                                  random_seed=None):
 
-        # original_rotation = None
-        # print(f'Original Rotation: {original_rotation}')
-        # md = MorphologyData(swc_file=swc_file)
-        # md.place(rotation=None, position=original_position)
-        # np.savetxt("unbent.csv", md.geometry[:,:3], 
-        #               delimiter = ",")
+
         md = MorphologyData(swc_file=swc_file)
         md.place(rotation=original_rotation, position=original_position)
-        # np.savetxt("rot.csv", md.geometry[:,:3], 
-        #               delimiter = ",")
-        
-        
+
         rot_rep, morphology_changed = self.bend_morphology(md,
                                                            k_dist=k_dist, max_angle=max_angle,
                                                            n_random=n_random,
                                                            random_seed=random_seed)
 
+
         if morphology_changed:
             new_coord = self.apply_rotation(md, rot_rep)
             md.geometry[:, :3] = new_coord
-            # np.savetxt("bent.csv", md.geometry[:,:3], 
-            #               delimiter = ",")
             self.write_swc(morphology=md, output_file=new_file)
             return new_file
 

@@ -81,7 +81,8 @@ class SnuddaRotate:
         
         
             # rotation_matrices = [np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]]) for x in range(0, neuron_positions.shape[0])]
-           
+            # rotation_matrices = [np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]) for x in range(0, neuron_positions.shape[0])]
+
 
         elif "vector_field" in rotation_mode:
             rotation_vectors = griddata(points=field_position,

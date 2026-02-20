@@ -1343,7 +1343,9 @@ class SnuddaInput(object):
                             num_inputs = max(1, int(rng_num_inputs.normal(input_inf["num_inputs"][0], input_inf["num_inputs"][1])))
                         else:
                             num_inputs = int(input_inf["num_inputs"])
-                        csv_spikes = csv_spikes[:num_inputs]
+                        # csv_spikes = csv_spikes[:num_inputs]
+                        
+                        csv_spikes = [csv_spikes[:] for _ in range(num_inputs)]
 
                     num_spike_trains = len(csv_spikes)
 
@@ -1372,8 +1374,6 @@ class SnuddaInput(object):
                             dendrite_location = dendrite_location[str(neuron_id)]
 
                         sec_id, sec_x = zip(*dendrite_location)
-
-                        # x = y = z = dist_to_soma = np.zeros((len(sec_id),))
                     
                         xyz, dist_to_soma = self.get_defined_synapse_location(neuron_id, sec_id, sec_x)
  
@@ -1405,25 +1405,29 @@ class SnuddaInput(object):
                         else:
                             n_soma_synapses = 0
 
-                        if n_soma_synapses > num_spike_trains:
-                            n_soma_synapses = num_spike_trains
+                        n_soma_synapses = min(n_soma_synapses, num_spike_trains)
+
                         
                         # self.write_log(f" Number of spike trains: {num_spike_trains}")
                         # self.write_log(f" Number of soma synapses: {n_soma_synapses}")
                         num_dendrite_synapses = num_spike_trains - n_soma_synapses
-                        # We need a random seed generator for the dendrite_input_location on the master TODO: Cleanup
+
                         input_loc = self.dendrite_input_locations(neuron_id=neuron_id,
                                                                   synapse_density=synapse_density,
                                                                   num_spike_trains=num_dendrite_synapses,
                                                                   rng=rng_master,
                                                                   cluster_size=cluster_size,
                                                                   cluster_spread=cluster_spread)
+                        
+                        
 
                         # If there are synapses on the soma then we need to add those also
                         if n_soma_synapses > 0:
                             input_loc = self.add_soma_synapses(input_loc,
                                                                n_soma_synapses=n_soma_synapses,
                                                                neuron_id=neuron_id)
+                            
+                        xyz, sec_id, sec_x, dist_to_soma = input_loc
 
                     self.neuron_input[neuron_id][input_type]["location"] = input_loc
                     self.neuron_input[neuron_id][input_type]["synapse_density"] = synapse_density
@@ -1656,7 +1660,7 @@ class SnuddaInput(object):
             self.neuron_input[neuron_id][input_type]["parameter_id"] = param_id
             
             
-            self.write_log("Finished setting up input", force_print=True)
+            self.write_log(f"Finished setting up input: {neuron_id}", force_print=True) ##for debugging, turn off eventually
 
 
         return self.neuron_input
@@ -2341,6 +2345,7 @@ class SnuddaInput(object):
                                                   parameter_key=parameter_key,
                                                   morphology_key=morphology_key,
                                                   modulation_key=modulation_key)
+            
 
         elif neuron_name in self.neuron_cache:
             # Since we do not care about location of neuron in space, we can use get_cache_original
@@ -2348,6 +2353,7 @@ class SnuddaInput(object):
                                                               morphology_key=morphology_key,
                                                               position=None, rotation=None,
                                                               get_cache_original=True)
+            
         else:
             self.write_log(f"Creating prototype {neuron_name}")
             morphology_prototype = NeuronPrototype(neuron_name=neuron_name,
@@ -2696,6 +2702,9 @@ class SnuddaInput(object):
                                                        n_soma_synapses=num_soma_synapses,
                                                        neuron_id=neuron_id)
 
+                # xyz, sec_id, sec_x, dist_to_soma = input_loc
+                # print(xyz)
+
             num_inputs = input_loc[0].shape[0]
 
             if num_inputs > 0:
@@ -2745,11 +2754,9 @@ class SnuddaInput(object):
 
     def import_csv_spikes(self, csv_file):
 
-        spikes = []
         with open(csv_file, "r") as f:
             while row := f.readline():
-                s = np.array(sorted([float(x) for x in row.split(",")]))
-                spikes.append(s)
+                spikes = np.array(sorted([float(x) for x in row.split(",")]))
 
         return spikes
 
