@@ -31,7 +31,7 @@ ENDCOMMENT
 NEURON {
     SUFFIX kir_fs
     USEION k READ ek WRITE ik
-    RANGE gbar, gk, ik, shift
+    RANGE gbar, gk, ik, shift, q
     RANGE modDA, maxModDA, levelDA
 }
 

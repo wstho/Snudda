@@ -1,0 +1,19 @@
+{
+    "1":{
+        "synapse":  {
+                    "tau1":2.5,
+                    "tau2": 8.1,
+                    "tauR": 0.1,
+                    "tauF":0.072,
+                    "failRate": 0.0,
+                    "failRateACh":1,
+                    "failRateDA": 1,
+                    "levelACh":1,
+                    "levelDA": 1,
+                    "modACh":1,
+                    "modDA": 1,
+                    "U": 0.0402,
+                    "e": -80
+                }
+    }
+}

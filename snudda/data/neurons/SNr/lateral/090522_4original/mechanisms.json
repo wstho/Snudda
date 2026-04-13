@@ -1,0 +1,1 @@
+{"somatic": ["pas", "cadyn_fs", "Cl_dynamics","kir_fs", "kas_fs", "kcnq_ch", "bk_ch", "sk_fs", "naf_snr", "nap_hp", "hcn12_ch", "KV_SNr","kdr_fs","can_fs","caq_fs"], "basal": ["pas","Cl_dynamics","cadyn_fs", "kir_fs","kcnq_ch", "bk_ch", "sk_fs", "naf_snr", "hcn12_ch", "kv3","kdr_fs","can_fs","caq_fs"], "axonal": ["pas","cadyn_fs","nap_hp","naf_snr","kv11","KV_SNr"]}

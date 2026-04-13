@@ -13,7 +13,7 @@ UNITS {
 NEURON {
     SUFFIX caq_fs
     USEION ca READ cai, cao WRITE ica VALENCE 2
-    RANGE pbar, ica
+    RANGE pbar, ica, q
 }
 
 PARAMETER {

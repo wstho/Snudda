@@ -32,8 +32,8 @@ NEURON {
 	RANGE i, ehcn, g, gbar
 	GLOBAL a0, b0, ah, bh, ac, bc, aa0, ba0
 	GLOBAL aa0, ba0, aah, bah, aac, bac
-	GLOBAL kon, koff, b, bf, ai, gca, shift
-	RANGE modDA, maxModDA, levelDA
+	GLOBAL kon, koff, b, bf, ai, gca
+	RANGE modDA, maxModDA, levelDA, shift
 }
 
 UNITS {
@@ -65,8 +65,8 @@ PARAMETER {
 	bf      = 8.94
 	ai	= 1e-05		(mM)	:concentration cyclic AMP
 	gca     = 1			: relative conductance of the bound state
-	shift   = -17		(mV)	: shift in voltage dependence
-	q10v    = 4                     : q10 value from Magee 1998
+	shift   = -27		(mV)	: shift in voltage dependence
+	q10v    = 4                    : q10 value from Magee 1998
 	q10a    = 1.5			: estimated q10 for the cAMP binding reaction
 	celsius			(degC)
 	modDA = 0

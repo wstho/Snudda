@@ -12,8 +12,8 @@ UNITS {
 
 NEURON {
     SUFFIX cat32_ms
-    USEION cal READ cali, calo WRITE ical VALENCE 2
-    RANGE pbar, ical
+    USEION ca READ cai, cao WRITE ica VALENCE 2
+    RANGE pbar, ica
 }
 
 PARAMETER {
@@ -24,11 +24,11 @@ PARAMETER {
 
 ASSIGNED { 
     v (mV)
-    ical (mA/cm2)
-    ecal (mV)
+    ica (mA/cm2)
+    eca (mV)
     celsius (degC)
-    cali (mM)
-    calo (mM)
+    cai (mM)
+    cao (mM)
     minf
     mtau (ms)
     hinf
@@ -39,7 +39,7 @@ STATE { m h }
 
 BREAKPOINT {
     SOLVE states METHOD cnexp
-    ical = pbar*m*m*m*h*ghk(v, cali, calo)
+    ica = pbar*m*m*m*h*ghk(v, cai, cao)
 }
 
 INITIAL {
