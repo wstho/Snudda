@@ -727,15 +727,15 @@ class SnuddaDetect(object):
 
             axon_loc = np.floor((axon_cloud[:, :3] - self.simulation_origo) / self.hyper_voxel_width).astype(int)
             
-        elif neuron.axon_density_type == "sparse":
+        # elif neuron.axon_density_type == "sparse":
             
-            if not self.occupied:
-                self.occupied = self.find_occupied()
+        #     if not self.occupied:
+        #         self.occupied = self.find_occupied()
                 
-            n_hv = int(neuron.axon_density_hv)
-            rng = np.random.default_rng(seed)
+        #     n_hv = int(neuron.axon_density_hv)
+        #     rng = np.random.default_rng(seed)
         
-            hyper_voxel_id = list(np.unique(rng.choice(self.occupied, size = n_hv)))
+        #     hyper_voxel_id = list(np.unique(rng.choice(self.occupied, size = n_hv)))
 
 
         elif neuron.axon_density_type == "new_sparse":
