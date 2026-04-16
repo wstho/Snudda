@@ -18,7 +18,6 @@ __pycache__/
 *.txt
 *.csv
 *.csv-meta
-*.swc
 *.bz2
 *.gz
 
