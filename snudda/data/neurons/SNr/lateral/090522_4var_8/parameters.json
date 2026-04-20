@@ -234,28 +234,28 @@
         "value": 2
     },
     {
-        "param_name": "q_naf_snr2",
+        "param_name": "q_naf_snr",
         "type": "range",
         "sectionlist": "all",
         "dist_type": "uniform",
         "value": 3.2
     },
     {
-        "param_name": "gbar_naf_snr2",
+        "param_name": "gbar_naf_snr",
         "type": "range",
         "sectionlist": "basal",
         "dist_type": "uniform",
         "value": 0.0
     },
     {
-        "param_name": "gbar_naf_snr2",
+        "param_name": "gbar_naf_snr",
         "type": "range",
         "sectionlist": "somatic",
         "dist_type": "uniform",
         "value": 0.3999478099948436
     },
     {
-        "param_name": "gbar_naf_snr2",
+        "param_name": "gbar_naf_snr",
         "type": "range",
         "sectionlist": "axonal",
         "dist_type": "uniform",
