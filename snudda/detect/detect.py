@@ -1545,8 +1545,8 @@ class SnuddaDetect(object):
     
     def load_pdf(self):
         
-        distance_prob_file = '/Users/wst/Desktop/Karolinska/Simulation/Neuron/connectivity/distance_prob.hdf5'
-        #distance_prob_file = os.path.join(self.snudda_data, 'connectivity', 'distance_prob.hdf5')
+        #distance_prob_file = '/Users/wst/Desktop/Karolinska/Simulation/Neuron/connectivity/distance_prob.hdf5'
+        distance_prob_file = os.path.join(self.snudda_data, 'connectivity', 'distance_prob.hdf5')
         with h5py.File(distance_prob_file, 'r') as f:
             x_mid = f['x_mid'][:]
             probabilities = f['probabilities'][:]
