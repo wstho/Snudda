@@ -1,1 +1,42 @@
-{"somatic": ["pas", "cadyn_fs", "Cl_dynamics","kir_fs", "kas_fs", "kcnq_ch", "bk_ch", "sk_fs", "naf_fs", "nap_hp", "hcn12_ch", "Kv3_ch","kdr_fs","can_fs","caq_fs"], "basal": ["pas","Cl_dynamics","cadyn_fs", "kir_fs","kcnq_ch", "bk_ch", "sk_fs", "naf_fs", "hcn12_ch", "Kv3_ch","kdr_fs","can_fs","caq_fs"], "axonal": ["pas","cadyn_fs","nap_hp","naf_fs","kv11","Kv3_ch"]}
+{
+    "somatic": [
+        "pas",
+        "cadyn_fs",
+        "Cl_dynamics",
+        "kir_fs",
+        "kas_fs",
+        "kcnq_ch",
+        "bk_ch",
+        "sk_fs",
+        "naf_fs",
+        "nap_hp",
+        "hcn12_ch",
+        "Kv3_ch",
+        "kdr_fs",
+        "can_fs",
+        "caq_fs"
+    ],
+    "basal": [
+        "pas",
+        "Cl_dynamics",
+        "cadyn_fs",
+        "kir_fs",
+        "kcnq_ch",
+        "bk_ch",
+        "sk_fs",
+        "naf_fs",
+        "hcn12_ch",
+        "Kv3_ch",
+        "kdr_fs",
+        "can_fs",
+        "caq_fs"
+    ],
+    "axonal": [
+        "pas",
+        "cadyn_fs",
+        "nap_hp",
+        "naf_fs",
+        "kv11",
+        "Kv3_ch"
+    ]
+}
