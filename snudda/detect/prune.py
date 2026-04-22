@@ -1664,6 +1664,10 @@ class SnuddaPrune(object):
 
                     syn_set, unique_id = next(file_mat_iterator[h_id], (None, None))
 
+    
+                    import pdb
+                    pdb.set_trace()                    
+            
                     if syn_set is None:
                         # There were synapses in the hyper voxel, but none relevant to our
                         # selected files. Clear file List and fileMatIterator for this worker
